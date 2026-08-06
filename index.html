@@ -84,7 +84,7 @@
     <button class="secondary" onclick="cancelEditTitle()">Cancelar</button>
   </div>
   <div class="sub">Upload diário + painel de decisão, sempre atualizado com o que já foi carregado.<br>
-  <b style="color:var(--green)">Funciona 100% offline, sem conta e sem depender do Claude</b> — os dados ficam guardados só neste browser, neste computador. Se abrires noutro computador ou limpares os dados do browser, perdes o histórico. Faz backups periódicos (guarda uma cópia do ficheiro ou exporta os dados) se isto passar a ser importante.</div>
+  <b style="color:var(--green)">Dados guardados na cloud (Supabase), partilhados entre qualquer computador ou telemóvel</b> — basta o link e o código de acesso, não precisas de estar sempre no mesmo browser. Wellness e PSE podem ser atualizados automaticamente com um clique (Google Sheets); o calendário e o GPS continuam a ser upload manual do ficheiro. Faz backups periódicos na mesma (exporta os dados) — é sempre bom ter uma cópia de segurança à parte.</div>
 </header>
 
 <div class="tabs">
@@ -116,7 +116,7 @@
   </div>
   <div class="card">
     <h3>1. Planeamento semanal (calendário do clube)</h3>
-    <div class="desc">.csv ou .xlsx com duas colunas: <b>Data</b> e <b>Tipo</b> (texto livre, ex: "Folga", "Tensão/Duração-", "Duração++", "Veloc./Duração-", "Ativação", "Jornada X"). <b>Carrega isto primeiro</b> — os jogos detetados aqui são usados para marcar automaticamente as sessões de jogo quando carregares o GPS a seguir.</div>
+    <div class="desc">.csv ou .xlsx com duas colunas: <b>Data</b> e <b>Tipo</b> (texto livre, ex: "Folga", "Tensão", "Duração-", "Duração +", "Duração ++", "Duração +++", "Velocidade", "Ativação", "Recuperação", "Jornada X"). <b>Carrega isto primeiro</b> — os jogos detetados aqui são usados para marcar automaticamente as sessões de jogo quando carregares o GPS a seguir.</div>
     <input type="file" id="roadmapFile" accept=".csv,.xlsx,.xls">
     <button onclick="handleRoadmapUpload()">Processar e guardar</button>
     <div id="roadmapStatus"></div>
@@ -604,7 +604,13 @@ async function handleGPS(){
       if(!dateRaw || !dateRaw.includes('/')){ continue; }
       const parts = dateRaw.split('/');
       if(parts.length!==3){ continue; }
-      const dateStr = `${parts[2]}-${parts[0].padStart(2,'0')}-${parts[1].padStart(2,'0')}`;
+      // O Catapult (conta portuguesa) exporta a coluna "Period Name" no formato DD/MM/AAAA.
+      // Se a 1ª parte for >12 confirma-se DD/MM; se a 2ª parte for >12, é o formato inverso
+      // (MM/DD, ficheiros de outra origem/locale). Em caso de ambiguidade assume-se DD/MM
+      // (o formato confirmado desta fonte), para nunca gerar datas inválidas como "2026-31-07".
+      let dd = parts[0], mm = parts[1];
+      if(parseInt(parts[1],10) > 12 && parseInt(parts[0],10) <= 12){ dd = parts[1]; mm = parts[0]; }
+      const dateStr = `${parts[2]}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;
       const player = resolveName(r[0]);
       if(!player) continue;
       const get = (col) => { const idx=colIdx[col]; if(idx<0||r[idx]===undefined||r[idx]==='') return 0; const v=parseFloat(r[idx]); return isNaN(v)?0:v; };
@@ -1438,10 +1444,14 @@ async function loadPlaneamento(){
 
 const DAY_PROFILES = {
   FOLGA:  {distancia_pct:0,   hsr_pct:0,   sprint_pct:0,   acc_dec_pct:0},
+  REC:    {distancia_pct:30,  hsr_pct:15,  sprint_pct:10,  acc_dec_pct:35}, // Recuperação: sessão de regeneração, abaixo de Ativação
   ATIV:   {distancia_pct:45,  hsr_pct:30,  sprint_pct:25,  acc_dec_pct:55}, // MD-1: taper, o mais baixo antes do jogo (literatura: queda visível de Acc/Dec no MD-1)
   TENSAO: {distancia_pct:85,  hsr_pct:70,  sprint_pct:50,  acc_dec_pct:165}, // Acc/Dec sempre o mais alto (dia de duelos/contacto)
+  DURMM:  {distancia_pct:100, hsr_pct:75,  sprint_pct:60,  acc_dec_pct:110}, // Duração--: abaixo de Duração-, extrapolado
   DURM:   {distancia_pct:130, hsr_pct:100, sprint_pct:80,  acc_dec_pct:142}, // Acc/Dec convertido de %jogo real da literatura (Anderson et al.: MD-4=71.5% do jogo x 1.99 = 142% da crónica)
+  DURP:   {distancia_pct:150, hsr_pct:115, sprint_pct:92,  acc_dec_pct:143}, // Duração +: entre Duração- e Duração++, extrapolado
   DURPP:  {distancia_pct:169, hsr_pct:130, sprint_pct:104, acc_dec_pct:143}, // = Duração- × 1.30
+  DURPPP: {distancia_pct:190, hsr_pct:145, sprint_pct:118, acc_dec_pct:150}, // Duração +++: pico máximo, acima de Duração++, extrapolado
   VELOC:  {distancia_pct:100, hsr_pct:95,  sprint_pct:90,  acc_dec_pct:116}, // MD-2: tapering em volume, mas Acc/Dec convertido de %jogo real (58.5% x 1.99 = 116%)
   JOGO:   {distancia_pct:215, hsr_pct:252, sprint_pct:222, acc_dec_pct:199},
 };
@@ -1457,10 +1467,14 @@ const MATCH_CHRONIC_RATIO = {distancia:2.15, hsr:2.52, sprint:2.22, acc_dec:1.99
 // o valor "ativo" de cada dia fica guardado por dia em ROADMAP e pode ser ajustado manualmente.
 const LIT_PCT_JOGO = {
   FOLGA:  {distancia_pct:0,  hsr_pct:0,  sprint_pct:0,  acc_dec_pct:0},
+  REC:    {distancia_pct:14, hsr_pct:7,  sprint_pct:5,  acc_dec_pct:18},
   ATIV:   {distancia_pct:21, hsr_pct:12, sprint_pct:11, acc_dec_pct:28},
   TENSAO: {distancia_pct:40, hsr_pct:28, sprint_pct:23, acc_dec_pct:83},
+  DURMM:  {distancia_pct:46, hsr_pct:35, sprint_pct:27, acc_dec_pct:55},
   DURM:   {distancia_pct:60, hsr_pct:40, sprint_pct:36, acc_dec_pct:71}, // Acc/Dec bate quase certo com Anderson et al. (71.5%)
+  DURP:   {distancia_pct:70, hsr_pct:46, sprint_pct:41, acc_dec_pct:72},
   DURPP:  {distancia_pct:79, hsr_pct:52, sprint_pct:47, acc_dec_pct:72},
+  DURPPP: {distancia_pct:88, hsr_pct:58, sprint_pct:53, acc_dec_pct:75},
   VELOC:  {distancia_pct:47, hsr_pct:38, sprint_pct:41, acc_dec_pct:58}, // Acc/Dec bate certo com Anderson et al. (58.5%)
   JOGO:   {distancia_pct:100,hsr_pct:100,sprint_pct:100,acc_dec_pct:100},
 };
@@ -1472,14 +1486,18 @@ function median(arr){
 
 const DEFAULT_DAY_PROFILES = {
   FOLGA:  {distancia_pct:0,   hsr_pct:0,   sprint_pct:0,   acc_dec_pct:0},
+  REC:    {distancia_pct:30,  hsr_pct:15,  sprint_pct:10,  acc_dec_pct:35},
   ATIV:   {distancia_pct:45,  hsr_pct:30,  sprint_pct:25,  acc_dec_pct:55},
   TENSAO: {distancia_pct:85,  hsr_pct:70,  sprint_pct:50,  acc_dec_pct:165},
+  DURMM:  {distancia_pct:100, hsr_pct:75,  sprint_pct:60,  acc_dec_pct:110},
   DURM:   {distancia_pct:130, hsr_pct:100, sprint_pct:80,  acc_dec_pct:142},
+  DURP:   {distancia_pct:150, hsr_pct:115, sprint_pct:92,  acc_dec_pct:143},
   DURPP:  {distancia_pct:169, hsr_pct:130, sprint_pct:104, acc_dec_pct:143},
+  DURPPP: {distancia_pct:190, hsr_pct:145, sprint_pct:118, acc_dec_pct:150},
   VELOC:  {distancia_pct:100, hsr_pct:95,  sprint_pct:90,  acc_dec_pct:116},
   JOGO:   {distancia_pct:215, hsr_pct:252, sprint_pct:222, acc_dec_pct:199},
 };
-const PROFILE_LABELS = {TENSAO:'Tensão/Duração-', DURM:'Duração-', DURPP:'Duração++', VELOC:'Veloc./Duração-', ATIV:'Ativação', FOLGA:'Folga', JOGO:'Jornada (jogo)'};
+const PROFILE_LABELS = {TENSAO:'Tensão', DURMM:'Duração--', DURM:'Duração-', DURP:'Duração +', DURPP:'Duração ++', DURPPP:'Duração +++', VELOC:'Velocidade', ATIV:'Ativação', REC:'Recuperação', FOLGA:'Folga', JOGO:'Jornada (jogo)'};
 
 async function resetDayProfiles(){
   if(!confirm('Isto apaga TUDO relacionado com o calendário e as percentagens guardadas (calibração e calendário personalizado) e reconstrói do zero com os valores por defeito corretos. Se tinhas um calendário carregado por ficheiro, tens de o carregar outra vez depois. Continuar?')) return;
@@ -1498,7 +1516,7 @@ async function resetDayProfiles(){
       const profile = DAY_PROFILES[key] || DAY_PROFILES.DURM;
       return {...d, ...profile};
     });
-    const check = ['TENSAO','DURM','DURPP','VELOC','ATIV'].map(k=>`${k}: ${DAY_PROFILES[k].distancia_pct}/${DAY_PROFILES[k].hsr_pct}/${DAY_PROFILES[k].sprint_pct}/${DAY_PROFILES[k].acc_dec_pct}`).join(' · ');
+    const check = ['TENSAO','DURMM','DURM','DURP','DURPP','DURPPP','VELOC','ATIV','REC'].map(k=>`${k}: ${DAY_PROFILES[k].distancia_pct}/${DAY_PROFILES[k].hsr_pct}/${DAY_PROFILES[k].sprint_pct}/${DAY_PROFILES[k].acc_dec_pct}`).join(' · ');
     setStatus('calibrateStatus', true, `Tudo reconstruído do zero. Valores atuais (distância/HSR/sprint/acc-dec) — ${check}`);
     renderRoadmapTable();
     populateDayPicker();
@@ -1511,9 +1529,11 @@ async function calibrateDayProfiles(){
   try{
     setStatus('calibrateStatus', true, 'A calcular...');
     const gps = await getSeries('series_gps');
-    const collected = {TENSAO:{distancia:[],hsr:[],sprint:[],acc_dec:[]}, DURM:{distancia:[],hsr:[],sprint:[],acc_dec:[]},
-      DURPP:{distancia:[],hsr:[],sprint:[],acc_dec:[]}, VELOC:{distancia:[],hsr:[],sprint:[],acc_dec:[]}, ATIV:{distancia:[],hsr:[],sprint:[],acc_dec:[]}};
-    const distinctDates = {TENSAO:new Set(), DURM:new Set(), DURPP:new Set(), VELOC:new Set(), ATIV:new Set()};
+    const collected = {TENSAO:{distancia:[],hsr:[],sprint:[],acc_dec:[]}, DURMM:{distancia:[],hsr:[],sprint:[],acc_dec:[]},
+      DURM:{distancia:[],hsr:[],sprint:[],acc_dec:[]}, DURP:{distancia:[],hsr:[],sprint:[],acc_dec:[]},
+      DURPP:{distancia:[],hsr:[],sprint:[],acc_dec:[]}, DURPPP:{distancia:[],hsr:[],sprint:[],acc_dec:[]},
+      VELOC:{distancia:[],hsr:[],sprint:[],acc_dec:[]}, ATIV:{distancia:[],hsr:[],sprint:[],acc_dec:[]}, REC:{distancia:[],hsr:[],sprint:[],acc_dec:[]}};
+    const distinctDates = {TENSAO:new Set(), DURMM:new Set(), DURM:new Set(), DURP:new Set(), DURPP:new Set(), DURPPP:new Set(), VELOC:new Set(), ATIV:new Set(), REC:new Set()};
     let datesUsed = 0;
     for(const day of ROADMAP){
       const key = classifyDayLabel(day.label);
@@ -1609,10 +1629,14 @@ function classifyDayLabel(label){
   const l = norm(label);
   if(l.includes('folga')) return 'FOLGA';
   if(l.includes('jornada') || l.includes('jogo') || /\bjp\s*\d/.test(l)) return 'JOGO';
+  if(l.includes('recupera')) return 'REC';
   if(l.includes('tensão') || l.includes('tensao')) return 'TENSAO';
   if(l.includes('ativa')) return 'ATIV';
   if(l.includes('veloc')) return 'VELOC';
+  if(l.includes('+++')) return 'DURPPP';
   if(l.includes('++')) return 'DURPP';
+  if(l.includes('+')) return 'DURP';
+  if(l.includes('--')) return 'DURMM';
   return 'DURM';
 }
 function excelSerialToDateStr(v){
@@ -1665,6 +1689,39 @@ function parseGridCalendar(rows){
   return results;
 }
 
+// Lógica partilhada entre o upload manual do calendário e o fetch automático (OneDrive/link).
+// Recebe as linhas já extraídas (de CSV ou XLSX) e devolve {newRoadmap, isSimpleFormat, matchCount}.
+function processRoadmapRows(rows){
+  const header0 = (rows[0]||[]).map(h=>norm(h));
+  const isSimpleFormat = header0.some(h=>h.includes('data')) && header0.some(h=>h.includes('tipo'));
+  let parsedDays;
+  if(isSimpleFormat){
+    const dateCol = header0.findIndex(h=>h.includes('data'));
+    const tipoCol = header0.findIndex(h=>h.includes('tipo'));
+    parsedDays = [];
+    for(let i=1;i<rows.length;i++){
+      const r = rows[i];
+      if(!r || !r[dateCol] || !r[tipoCol]) continue;
+      const dateStr = excelSerialToDateStr(r[dateCol]);
+      if(!dateStr) continue;
+      parsedDays.push({data: dateStr, label: r[tipoCol].toString()});
+    }
+  } else {
+    parsedDays = parseGridCalendar(rows);
+    if(parsedDays.length===0) return {newRoadmap:[], isSimpleFormat, matchCount:0, error:'Não reconheci nem o formato "Data/Tipo" nem o formato de grelha semanal neste ficheiro.'};
+  }
+  const newRoadmap = [];
+  let matchCount = 0;
+  for(const pd of parsedDays){
+    const profileKey = classifyDayLabel(pd.label);
+    const isJogo = profileKey==='JOGO';
+    if(isJogo) matchCount++;
+    newRoadmap.push({ data: pd.data, md: isJogo?'MD':'', label: pd.label, ...DAY_PROFILES[profileKey] });
+  }
+  newRoadmap.sort((a,b)=> a.data.localeCompare(b.data));
+  return {newRoadmap, isSimpleFormat, matchCount};
+}
+
 async function handleRoadmapUpload(){
   const f = document.getElementById('roadmapFile').files[0];
   if(!f){ setStatus('roadmapStatus', false, 'Escolhe um ficheiro primeiro.'); return; }
@@ -1678,33 +1735,8 @@ async function handleRoadmapUpload(){
       const wb = XLSX.read(buf, {type:'array', cellDates:true});
       rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1});
     }
-    const header0 = (rows[0]||[]).map(h=>norm(h));
-    const isSimpleFormat = header0.some(h=>h.includes('data')) && header0.some(h=>h.includes('tipo'));
-    let parsedDays;
-    if(isSimpleFormat){
-      const dateCol = header0.findIndex(h=>h.includes('data'));
-      const tipoCol = header0.findIndex(h=>h.includes('tipo'));
-      parsedDays = [];
-      for(let i=1;i<rows.length;i++){
-        const r = rows[i];
-        if(!r || !r[dateCol] || !r[tipoCol]) continue;
-        const dateStr = excelSerialToDateStr(r[dateCol]);
-        if(!dateStr) continue;
-        parsedDays.push({data: dateStr, label: r[tipoCol].toString()});
-      }
-    } else {
-      parsedDays = parseGridCalendar(rows);
-      if(parsedDays.length===0){ setStatus('roadmapStatus', false, 'Não reconheci nem o formato "Data/Tipo" nem o formato de grelha semanal neste ficheiro.'); return; }
-    }
-    const newRoadmap = [];
-    let matchCount = 0;
-    for(const pd of parsedDays){
-      const profileKey = classifyDayLabel(pd.label);
-      const isJogo = profileKey==='JOGO';
-      if(isJogo) matchCount++;
-      newRoadmap.push({ data: pd.data, md: isJogo?'MD':'', label: pd.label, ...DAY_PROFILES[profileKey] });
-    }
-    newRoadmap.sort((a,b)=> a.data.localeCompare(b.data));
+    const {newRoadmap, isSimpleFormat, matchCount, error} = processRoadmapRows(rows);
+    if(error){ setStatus('roadmapStatus', false, error); return; }
     ROADMAP = newRoadmap;
     await setSeries('series_roadmap', {roadmap: ROADMAP});
     setStatus('roadmapStatus', true, `Calendário atualizado (formato ${isSimpleFormat?'Data/Tipo':'grelha semanal'} detetado): ${newRoadmap.length} dias, ${matchCount} jornadas/jogos identificados.`);
@@ -1766,10 +1798,14 @@ let chartCountInstance = null, chartSweetSpotInstance = null, chartChronicInstan
 
 const EXPECTED_PATTERN = {
   TENSAO: 'Volume baixo, Acc/Dec alto (duelos) — MD-5',
+  DURMM:  'Volume mais baixo dentro dos dias de duração — início de ciclo',
   DURM:   'Volume moderado, a construir — MD-4',
+  DURP:   'Volume moderado-alto, a subir para o pico',
   DURPP:  'Pico da semana — deve ser o mais alto (MD-3/MD-4)',
+  DURPPP: 'Pico máximo — o dia mais exigente de todos',
   VELOC:  'Início do tapering — semelhante ou já abaixo do pico, não um novo pico (MD-2)',
   ATIV:   'O mais baixo de todos os dias de treino — taper final (MD-1)',
+  REC:    'Sessão de recuperação — volume mínimo, foco em regeneração',
 };
 
 async function loadCycleSummary(){
@@ -1805,7 +1841,7 @@ async function loadCycleSummary(){
         }
       }
     }
-    for(const key of ['TENSAO','DURM','DURPP','VELOC','ATIV']){
+    for(const key of ['TENSAO','DURMM','DURM','DURP','DURPP','DURPPP','VELOC','ATIV','REC']){
       const s = sums[key];
       const tr = document.createElement('tr');
       if(!s || s.count===0){
