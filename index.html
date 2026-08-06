@@ -1,0 +1,1989 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<title>SC Vianense — Performance OS</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0b1210; --panel:#111b18; --panel2:#15211d; --line:#22322c;
+    --text:#e9efe9; --muted:#8ea69a;
+    --green:#3fae6a; --yellow:#d9a441; --red:#c85450; --blue:#5b9bd5;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;padding:28px 22px 80px;}
+  header{margin-bottom:16px;}
+  h1{font-size:22px;margin:0 0 6px;font-weight:700;}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin:24px 0 12px;display:flex;align-items:center;gap:10px;}
+  h2::after{content:'';flex:1;height:1px;background:var(--line);}
+  .sub{color:var(--muted);font-size:13px;line-height:1.6;}
+  .tabs{display:flex;gap:4px;margin:18px 0 20px;border-bottom:1px solid var(--line);flex-wrap:wrap;}
+  .tab{padding:10px 16px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;}
+  .tab:hover{color:var(--text);}
+  .tab.active{color:var(--text);border-bottom-color:var(--green);}
+  .panel{display:none;}
+  .panel.active{display:block;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin-bottom:16px;}
+  .card h3{margin:0 0 4px;font-size:15px;}
+  .card .desc{color:var(--muted);font-size:12.5px;margin-bottom:14px;}
+  input[type=file]{display:block;width:100%;font-size:13px;color:var(--muted);margin-bottom:8px;}
+  input[type=date],input[type=text],input[type=number],select,textarea{
+    background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:8px 10px;font-size:13px;width:100%;margin-bottom:10px;
+  }
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;}
+  button{background:var(--green);color:#0b1210;border:none;border-radius:6px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;}
+  button:hover{opacity:0.9;}
+  button.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line);}
+  .status{font-size:12.5px;margin-top:10px;padding:8px 10px;border-radius:6px;}
+  .status.ok{background:rgba(63,174,106,0.1);color:var(--green);border:1px solid rgba(63,174,106,0.3);}
+  .status.err{background:rgba(200,84,80,0.1);color:var(--red);border:1px solid rgba(200,84,80,0.3);}
+  .note{font-size:12px;color:var(--muted);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:16px;line-height:1.55;}
+  .plist{display:grid;grid-template-columns:1fr;gap:12px;}
+  @media(min-width:1000px){ .plist{grid-template-columns:1fr 1fr;} }
+  .pcard{background:var(--panel);border-radius:12px;padding:16px 18px;border-left:5px solid var(--c);}
+  .pcard .pname{font-size:15px;font-weight:700;margin-bottom:4px;}
+  .pcard .preason{font-size:12.5px;color:var(--muted);line-height:1.5;}
+  .painbox{font-size:12px;color:var(--pc,var(--red));background:var(--pc-bg,rgba(200,84,80,0.08));border:1px solid var(--pc-border,rgba(200,84,80,0.3));border-radius:6px;padding:6px 9px;margin-top:8px;}
+  .cargabox{font-size:12px;color:var(--text);background:var(--panel2);border-radius:6px;padding:8px 10px;margin-top:8px;line-height:1.6;}
+  .glabel{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;margin:18px 0 10px;}
+  .gdot{width:11px;height:11px;border-radius:50%;}
+  table{width:100%;border-collapse:collapse;font-size:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+  th,td{padding:7px 9px;text-align:left;border-bottom:1px solid var(--line);}
+  th{color:var(--muted);font-weight:600;text-transform:uppercase;font-size:10px;background:var(--panel2);}
+  .rowbtn{background:transparent;border:1px solid var(--line);color:var(--muted);padding:3px 9px;font-size:11px;border-radius:5px;}
+  .teamgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;}
+  .teamstat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;text-align:center;}
+  .teamstat .num{font-size:22px;font-weight:700;}
+  .teamstat .lbl{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:4px;}
+  body.locked > *:not(#authGate){display:none !important;}
+  body:not(.locked) #authGate{display:none !important;}
+</style>
+</head>
+<body class="locked">
+
+<div id="authGate" style="position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;">
+  <div style="width:280px;text-align:center;">
+    <h2 style="border:none;">Código de acesso</h2>
+    <input type="password" id="passcodeInput" placeholder="Código" style="text-align:center;" autocomplete="off">
+    <button onclick="checkPasscode()" style="width:100%;">Entrar</button>
+    <div id="passcodeStatus"></div>
+  </div>
+</div>
+
+<header>
+  <h1 id="mainTitle" style="cursor:pointer;" onclick="editTitle()" title="Clica para editar o nome da equipa e a época">SC Vianense — Performance OS</h1>
+  <div id="titleEditBox" style="display:none;margin-bottom:10px;">
+    <label>Nome da equipa</label>
+    <input type="text" id="teamNameInput" placeholder="SC Vianense">
+    <label>Época</label>
+    <input type="text" id="teamSeasonInput" placeholder="ex: 2026/2027">
+    <button onclick="saveTitle()">Guardar</button>
+    <button class="secondary" onclick="cancelEditTitle()">Cancelar</button>
+  </div>
+  <div class="sub">Upload diário + painel de decisão, sempre atualizado com o que já foi carregado.<br>
+  <b style="color:var(--green)">Funciona 100% offline, sem conta e sem depender do Claude</b> — os dados ficam guardados só neste browser, neste computador. Se abrires noutro computador ou limpares os dados do browser, perdes o histórico. Faz backups periódicos (guarda uma cópia do ficheiro ou exporta os dados) se isto passar a ser importante.</div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" data-tab="hoje">Hoje</div>
+  <div class="tab" data-tab="planeamento">Planeamento</div>
+  <div class="tab" data-tab="equipa">Equipa</div>
+  <div class="tab" data-tab="progressao">Gráficos</div>
+  <div class="tab" data-tab="benchmark">Benchmark de jogo</div>
+  <div class="tab" data-tab="tecnico">Dados técnicos</div>
+  <div class="tab" data-tab="history">Histórico</div>
+  <div class="tab" data-tab="upload">Upload diário</div>
+</div>
+
+<div class="panel" id="panel-upload">
+  <div class="note">Os ficheiros de wellness, PSE e GPS podem conter <b>vários dias de uma vez</b> — a data de cada registo é lida diretamente do ficheiro (coluna de data/hora), não precisas de carregar dia a dia. Ficheiros repetidos com dias sobrepostos simplesmente atualizam esses dias.</div>
+  <div class="card">
+    <label>Data (só para a sessão de treino manual, nº 4)</label>
+    <input type="date" id="dataInput">
+  </div>
+  <div class="card">
+    <h3>0. Atualização automática (Google Sheets)</h3>
+    <div class="desc">Cola aqui os links CSV publicados das folhas de wellness e PSE (Google Sheets → Ficheiro → Partilhar → Publicar no Web → escolhe a folha → formato CSV → Publicar). Depois de colados uma vez, ficam guardados neste browser — só precisas de carregar em "Atualizar agora" sempre que quiseres puxar os dados mais recentes.</div>
+    <label>Link CSV — Wellness (questionário matinal)</label>
+    <input type="text" id="wellnessSheetUrl" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv" value="https://docs.google.com/spreadsheets/d/e/2PACX-1vQQtfABnloKD9mc67ntiANxY9aL86pxQLmP2B_EgoNWzrSEbBwTsBSofpGf1f7IPfvdknuJ9SM6iiHZ/pub?output=csv">
+    <label>Link CSV — PSE (esforço percebido)</label>
+    <input type="text" id="pseSheetUrl" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv" value="https://docs.google.com/spreadsheets/d/e/2PACX-1vQBzTOYUYPNnD7-ljEWcMIQemA1_CGmFOwjZNEuffLhy5pvUFcxluDsCVffF3WsUhwRKrbhljYPCuwP/pub?output=csv">
+    <button onclick="fetchAllSheets()">Atualizar agora (Google Sheets)</button>
+    <div id="fetchSheetsStatus"></div>
+  </div>
+  <div class="card">
+    <h3>1. Planeamento semanal (calendário do clube)</h3>
+    <div class="desc">.csv ou .xlsx com duas colunas: <b>Data</b> e <b>Tipo</b> (texto livre, ex: "Folga", "Tensão/Duração-", "Duração++", "Veloc./Duração-", "Ativação", "Jornada X"). <b>Carrega isto primeiro</b> — os jogos detetados aqui são usados para marcar automaticamente as sessões de jogo quando carregares o GPS a seguir.</div>
+    <input type="file" id="roadmapFile" accept=".csv,.xlsx,.xls">
+    <button onclick="handleRoadmapUpload()">Processar e guardar</button>
+    <div id="roadmapStatus"></div>
+  </div>
+  <div class="card">
+    <h3>2. GPS (carga externa)</h3>
+    <div class="desc">.csv do Catapult (Player Name, Period Name, Distance, High Speed Distance, Sprint Distance, Accel + Decel Efforts). Pode ter várias sessões/dias — a data vem da coluna "Period Name". A duração daqui é usada a seguir para calcular o sRPE combinado com o PSE.</div>
+    <input type="file" id="gpsFile" accept=".csv">
+    <button onclick="handleGPS()">Processar e guardar</button>
+    <div id="gpsStatus"></div>
+  </div>
+  <div class="card">
+    <h3>3. PSE (esforço percebido pós-treino)</h3>
+    <div class="desc">.xlsx do Google Forms (Tipo de sessão, RPE 1-10). Pode ter um dia ou o histórico todo.</div>
+    <input type="file" id="pseFile" accept=".xlsx,.xls">
+    <button onclick="handlePSE()">Processar e guardar</button>
+    <div id="pseStatus"></div>
+  </div>
+  <div class="card">
+    <h3>4. Questionário matinal (wellness)</h3>
+    <div class="desc">.xlsx do Google Forms (Cansaço, Sono, Dores, Stress, Humor). Pode ter um dia ou o histórico todo — cada linha grava-se na sua própria data.</div>
+    <input type="file" id="wellnessFile" accept=".xlsx,.xls">
+    <button onclick="handleWellness()">Processar e guardar</button>
+    <div id="wellnessStatus"></div>
+  </div>
+
+  <div class="card">
+    <h3>5. Ficheiro de treino (PDF)</h3>
+    <div class="desc">Extrai o texto do PDF e tenta somar as durações automaticamente (procura números antes de "(total)"/"(Total)"). <b>A extração de PDF é frágil</b> — confirma sempre o resultado antes de gravar.</div>
+    <input type="file" id="pdfFile" accept=".pdf">
+    <label>Data da sessão</label>
+    <input type="date" id="pdfDataInput">
+    <button onclick="handlePdfUpload()">Extrair texto</button>
+    <div id="pdfStatus"></div>
+    <div id="pdfPreview" style="display:none;margin-top:10px;">
+      <label>Duração detetada (min) — confirma/corrige</label>
+      <input type="number" id="pdfDuracaoDetetada">
+      <label>Texto extraído (revê antes de gravar)</label>
+      <textarea id="pdfTextoExtraido" rows="6"></textarea>
+      <button onclick="savePdfSession()">Guardar esta sessão</button>
+    </div>
+  </div>
+</div>
+
+<div class="panel active" id="panel-hoje">
+  <div class="note" id="dashSubline">A carregar...</div>
+  <button class="secondary" onclick="loadDashboard()">Atualizar</button>
+  <div id="dashGroups" style="margin-top:16px;"></div>
+</div>
+
+<div class="panel" id="panel-planeamento">
+  <div class="note">Alvo numérico automático por jogador, para qualquer dia do calendário do clube (não só amanhã) — calculado a partir da carga crónica (28 dias) até hoje × o tipo de dia (MD-5 a MD). <b>"Alvo"</b> é o valor em bruto (crónica×%); <b>"Reajustado"</b> é esse valor corrigido pelo desvio acumulado do ciclo — quando não há ajuste, mostra "= alvo". <b>Desvio</b>: quanto esse jogador está atrás (amarelo, ↓) ou à frente (cinza, ↑) do plano nessa variável, acumulado desde o início do ciclo — verde quando está praticamente em linha (menos de 5%).</div>
+  <label>Dia</label>
+  <select id="dayPicker"></select>
+  <div id="planInfo" class="note"></div>
+  <table id="planTable">
+    <thead><tr><th>Jogador</th><th>Distância alvo</th><th>Distância reajustada</th><th>Desvio (ciclo)</th><th>HSR alvo</th><th>HSR reajustado</th><th>Desvio (ciclo)</th><th>Sprint alvo</th><th>Sprint reajustado</th><th>Desvio (ciclo)</th><th>Acc/Dec alvo</th><th>Acc/Dec reajustado</th><th>Desvio (ciclo)</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div class="panel" id="panel-benchmark">
+  <div class="note"><b>Premier League:</b> dados de estudos científicos recentes sobre a liga (2015-2025), por 90 min, jogador de campo. <b>Liga 3 (ajustado):</b> a Liga 3 portuguesa é um campeonato <b>profissional</b> (desde 2021), apesar de ser a 3ª divisão — por isso o fosso face à Premier League é bem menor do que seria para uma liga amadora. Não existe estudo publicado específico da Liga 3, por isso é uma estimativa minha, aplicando: distância ×0.92, Acc/Dec ×0.85 (variáveis ligadas ao volume/trabalho, onde o fosso entre profissionais é pequeno), HSR ×0.78 e sprint ×0.65 (variáveis mais dependentes de recursos de staff, preparação física e qualidade atlética de topo, onde o fosso continua a existir mesmo entre ligas profissionais). <b>Trata isto como uma referência de trabalho, não um valor validado</b> — calibra com dados reais de adversários da Liga 3 assim que tiveres.</div>
+  <h2>Geral</h2>
+  <table id="benchTable">
+    <thead><tr><th>Variável</th><th>Premier League</th><th>Liga 3 (ajustado)</th><th>SC Vianense (real, jogos)</th><th>% do PL</th><th>% da Liga 3</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <h2>Por posição</h2>
+  <div class="note">Posição capturada automaticamente do ficheiro de GPS (coluna "Posição" ou "Position": DC, LAT, MC, EXT, AC). Sprint calibrado a 25,2km/h (padrão UEFA/FIFA); Acc/Dec calibrado a 2 m/s² (limiar confirmado do teu Catapult).</div>
+  <table id="posBenchTable">
+    <thead><tr><th>Posição</th><th>Variável</th><th>Premier League</th><th>Liga 3 (ajustado)</th><th>SC Vianense (real, jogos)</th><th>% do PL</th><th>% da Liga 3</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div class="panel" id="panel-tecnico">
+  <div class="note">Cargas crónicas em bruto (28 dias) por jogador — a base de todos os alvos e rácios calculados nas outras abas.</div>
+  <button class="secondary" onclick="loadTecnico()">Atualizar</button>
+  <table id="techTable" style="margin-top:12px;">
+    <thead><tr><th>Jogador</th><th>Posição</th><th>Combinado (ratio)</th><th>Dist. 7d</th><th>Dist. 28d</th><th>Dist. ratio</th><th>HSR 7d</th><th>HSR 28d</th><th>HSR ratio</th><th>Sprint 7d</th><th>Sprint 28d</th><th>Sprint ratio</th><th>Acc/Dec 7d</th><th>Acc/Dec 28d</th><th>Acc/Dec ratio</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<div class="panel" id="panel-progressao">
+  <div class="note">Evolução ao longo do tempo — nº de jogadores dentro do sweet spot, ACWR médio da equipa (com a banda do sweet spot marcada no gráfico) e carga real de jogo, para perceber que ritmo de progressão é realista para a equipa como um todo.</div>
+  <button class="secondary" onclick="loadProgressao()">Atualizar</button>
+  <h2>Jogadores em sweet spot ao longo do tempo</h2>
+  <canvas id="chartCount" height="90"></canvas>
+  <h2>ACWR médio da equipa ao longo do tempo (com banda do sweet spot)</h2>
+  <canvas id="chartSweetSpot" height="90"></canvas>
+  <h2>Resumo do último ciclo completo (soma por tipo de dia vs. literatura)</h2>
+  <div class="note">Soma real da equipa por tipo de dia no ciclo mais recente já terminado (desde a última Folga/Jornada até à seguinte). A literatura (Akenhead et al.; Los Arcos et al.; Clemente et al., La Liga) diz que o <b>pico deve estar no MD-3/MD-4</b>, e que <b>MD-2 e MD-1 devem descer progressivamente (tapering)</b> — aqui vês se o padrão real da equipa bate certo com isso.</div>
+  <button class="secondary" onclick="loadCycleSummary()">Atualizar</button>
+  <div id="cycleSummaryInfo" class="note"></div>
+  <table id="cycleSummaryTable">
+    <thead><tr><th>Tipo de dia</th><th>Distância (soma equipa)</th><th>HSR</th><th>Sprint</th><th>Acc/Dec</th><th>Padrão esperado</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <h2>Evolução da distância crónica da equipa (base de 28 dias)</h2>
+  <div class="note">Linhas de referência: <b>Premier League ~3980 m/dia</b> (estudo científico sobre ligas profissionais holandesa/inglesa, Rathke et al., Frontiers 2020 — carga crónica "alta" de 111.500m/28 dias); <b>Liga 3 ~3660 m/dia</b> (estimativa minha, aplicando o mesmo fator profissional ×0.92 usado no resto dos benchmarks — não há estudo publicado específico).</div>
+  <canvas id="chartChronic" height="90"></canvas>
+  <h2>Carga real de jogo (distância) ao longo da época</h2>
+  <canvas id="chartJogos" height="90"></canvas>
+  <h2>Carga real de jogo (HSR) ao longo da época</h2>
+  <canvas id="chartJogosHSR" height="90"></canvas>
+  <h2>Carga real de jogo (Sprint/VHSR) ao longo da época</h2>
+  <canvas id="chartJogosSprint" height="90"></canvas>
+</div>
+
+<div class="panel" id="panel-equipa">
+  <h2>Roteiro coletivo (calendário do clube)</h2>
+  <div class="note"><b>Percentagens relativas à carga crónica de treino individual de cada jogador — nunca ao benchmark.</b> <b>Porque é que o jogo aparece tão alto (200%+)?</b> Um jogo de 90 minutos em competição é sempre muito mais exigente do que qualquer treino normal — é suposto e correto ser 2x a 2.5x a carga diária de treino, não é um erro nem uma meta a atingir num dia de treino. Por isso mostramos o dia de jogo em separado, não como percentagem comparável às restantes linhas.</div>
+  <div class="note" style="border-color:rgba(63,174,106,0.4)">As percentagens começam como estimativas (ajustadas para refletir que a carga crónica é sempre mais baixa do que um dia de treino ativo, e que Acc/Dec é sempre mais alto em dias de Tensão). <b>Edita diretamente os números de qualquer dia na tabela abaixo</b> — cada célula é editável; muda e sai do campo (Tab ou clicar fora) para gravar automaticamente, só nesse dia específico.</div>
+  <button class="secondary" onclick="calibrateDayProfiles()">Calibrar percentagens com dados reais</button>
+  <button class="secondary" onclick="resetDayProfiles()" style="border-color:rgba(200,84,80,0.4);color:var(--red)">Repor percentagens por defeito (apagar calibração guardada)</button>
+  <div id="calibrateStatus"></div>
+  <div id="manualProfileStatus"></div>
+  <div style="overflow-x:auto;">
+  <table id="roadmapTable" style="min-width:1400px;">
+    <thead>
+      <tr><th rowspan="2">Data</th><th rowspan="2">Fase</th><th rowspan="2">Tipo de dia</th>
+        <th colspan="3" style="text-align:center">Distância</th><th colspan="3" style="text-align:center">HSR</th>
+        <th colspan="3" style="text-align:center">Sprint</th><th colspan="3" style="text-align:center">Acc/Dec</th></tr>
+      <tr>
+        <th>Lit. %jogo</th><th>%jogo (editar)</th><th>%crónica</th>
+        <th>Lit. %jogo</th><th>%jogo (editar)</th><th>%crónica</th>
+        <th>Lit. %jogo</th><th>%jogo (editar)</th><th>%crónica</th>
+        <th>Lit. %jogo</th><th>%jogo (editar)</th><th>%crónica</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  </div>
+</div>
+
+<div class="panel" id="panel-history">
+  <div class="note">Datas com dados guardados. <b>Os dados vivem só neste browser</b> — usa "Exportar cópia de segurança" regularmente e guarda o ficheiro nalgum lado seguro (Google Drive, etc.).</div>
+  <button class="secondary" onclick="loadHistory()">Atualizar lista</button>
+  <button class="secondary" onclick="exportBackup()">Exportar cópia de segurança</button>
+  <button class="secondary" onclick="cleanupPlayers()">Corrigir nomes duplicados / remover jogadores excluídos</button>
+  <button class="secondary" onclick="resetGpsData()" style="border-color:rgba(200,84,80,0.4);color:var(--red)">Apagar TODO o histórico de GPS (recomeçar do zero)</button>
+  <div id="cleanupStatus"></div>
+  <label style="margin-top:10px;">Importar cópia de segurança</label>
+  <input type="file" id="importFile" accept=".json">
+  <button onclick="importBackup()">Importar (substitui os dados atuais)</button>
+  <div id="backupStatus"></div>
+  <table id="historyTable" style="margin-top:16px;">
+    <thead><tr><th>Data</th><th>Wellness</th><th>PSE</th><th>GPS</th><th>Sessão</th><th></th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script>
+const CANONICAL = ["Alieson Kamara","Bruno Silva","Diogo Maga","Diogo Rashid","Dionísio Mendonça",
+"Eduardo Aguiar","Gabriel Faria","Hamed Doukouré","Henrique Brito","Joaquim Marques",
+"João Castro","João Faria","Khalid Hachadi","Laércio Morais","Lowen Nsonga",
+"Moisés Conceição","Pedro Soares","Reko Silva","Sekou Diancoumba","Yuri Pierre"];
+const ALIAS = {
+ "alieson":"Alieson Kamara","bruno s":"Bruno Silva","bruno silva":"Bruno Silva",
+ "dionísio":"Dionísio Mendonça","edu aguiar":"Eduardo Aguiar","gabi":"Gabriel Faria","gabi faria":"Gabriel Faria",
+ "hachadi":"Khalid Hachadi","hamed":"Hamed Doukouré","henrique":"Henrique Brito","henrique brito":"Henrique Brito",
+ "joaquim marques":"Joaquim Marques","joão castro":"João Castro","joão faria":"João Faria",
+ "khalid hachadi":"Khalid Hachadi","laércio":"Laércio Morais","lowen":"Lowen Nsonga","lowen nsonga":"Lowen Nsonga",
+ "maga":"Diogo Maga","moisés":"Moisés Conceição","pedro soares":"Pedro Soares","rashid":"Diogo Rashid",
+ "reko":"Reko Silva","sekou":"Sekou Diancoumba","soares":"Pedro Soares","yuri":"Yuri Pierre",
+ "bruno":"Bruno Silva","gonçalo lopes":"Gonçalo Lopes","gonçalo rolo":"Gonçalo Rolo",
+ "nuno silva":"Nuno Silva","vitor são bento":"Vitor São Bento",
+};
+// Jogadores que já não fazem parte do plantel — qualquer registo com este nome é ignorado.
+const EXCLUDED_PLAYERS = ["Pedro Caeiro"];
+// Normaliza ignorando acentos (NFD + remoção de diacríticos), maiúsculas/minúsculas e espaços a mais.
+// Isto evita que "João" e "Joao" (ou variantes sem acento vindas de exports diferentes) sejam
+// tratados como dois jogadores distintos.
+// Lê um ficheiro de texto (CSV) detetando automaticamente se está em UTF-8 ou Latin-1/Windows-1252
+// (comum em exports do Catapult e de ficheiros com nomes portugueses). Sem isto, nomes com
+// acentos (Dionísio, João, Laércio, Moisés, etc.) ficam corrompidos e deixam de ser reconhecidos.
+async function readTextSmart(file){
+  const buf = await file.arrayBuffer();
+  let text = new TextDecoder('utf-8', {fatal:false}).decode(buf);
+  // sinal clássico de UTF-8 lido como Latin-1: sequências "Ã" + outro caráter (ex: "Ã­" em vez de "í")
+  if(/Ã[\u0080-\u00BF]/.test(text) || /\uFFFD/.test(text)){
+    text = new TextDecoder('windows-1252', {fatal:false}).decode(buf);
+  }
+  return text;
+}
+function norm(s){
+  return (s||'').toString().trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/\s+/g,' ');
+}
+// Mapa de aliases re-indexado por chave normalizada (sem acentos), construído uma vez a partir do ALIAS acima.
+const ALIAS_NORM = {};
+for(const k in ALIAS){ ALIAS_NORM[norm(k)] = ALIAS[k]; }
+function resolveName(name){
+  const k = norm(name);
+  if(!k) return null;
+  if(ALIAS_NORM[k]) return ALIAS_NORM[k];
+  for(const c of CANONICAL) if(norm(c)===k) return c;
+  const raw = (name||'').toString().trim();
+  if(EXCLUDED_PLAYERS.some(ex=>norm(ex)===k)) return null;
+  return raw;
+}
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function addDays(dateStr, n){
+  const d = new Date(dateStr+'T00:00:00');
+  d.setDate(d.getDate()+n);
+  return d.toISOString().slice(0,10);
+}
+// Data de referência única usada em toda a app para os cálculos de ACWR/sweet spot: a última
+// data com dados reais carregados (GPS ou wellness), não a data real do calendário -- assim
+// não se contam dias sem upload ainda como "zero carga", o que baixaria os rácios artificialmente.
+async function getRefDate(){
+  const gps = await getSeries('series_gps');
+  const wellness = await getSeries('series_wellness');
+  const allDates = new Set();
+  Object.values(gps).forEach(pd=>Object.keys(pd).forEach(d=>allDates.add(d)));
+  Object.values(wellness).forEach(pd=>Object.keys(pd).forEach(d=>allDates.add(d)));
+  // Ignora chaves de data corrompidas (ex.: de uploads antigos com bug) para nunca rebentar os cálculos.
+  const valid = [...allDates].filter(isValidDateStr);
+  if(valid.length===0) return todayStr();
+  return valid.sort().slice(-1)[0];
+}
+document.getElementById('dataInput').value = todayStr();
+document.getElementById('pdfDataInput').value = todayStr();
+
+const BASE_ROADMAP = [{"data": "2026-07-01", "md": "MD-10", "label": "Duração-"}, {"data": "2026-07-02", "md": "MD-9", "label": "Duração-"}, {"data": "2026-07-03", "md": "MD-8", "label": "Duração-"}, {"data": "2026-07-04", "md": "MD-7", "label": "Tensão"}, {"data": "2026-07-05", "md": "MD-6", "label": "Folga"}, {"data": "2026-07-06", "md": "MD-5", "label": "Duração-"}, {"data": "2026-07-07", "md": "MD-4", "label": "Tensão"}, {"data": "2026-07-08", "md": "MD-3", "label": "Duração +"}, {"data": "2026-07-09", "md": "MD-2", "label": "Velocidade"}, {"data": "2026-07-10", "md": "MD-1", "label": "Ativação"}, {"data": "2026-07-11", "md": "MD", "label": "JP1-Vitoria B (F)"}, {"data": "2026-07-12", "md": "MD-3", "label": "Folga"}, {"data": "2026-07-13", "md": "MD-2", "label": "Duração-"}, {"data": "2026-07-14", "md": "MD-1", "label": "Tensão"}, {"data": "2026-07-15", "md": "MD", "label": "JP2 - Gil Vicente (F) 10h30"}, {"data": "2026-07-16", "md": "MD-2", "label": "Recuperaçao"}, {"data": "2026-07-17", "md": "MD-1", "label": "Ativação"}, {"data": "2026-07-18", "md": "MD", "label": "JP3-Braga S23 (F)"}, {"data": "2026-07-19", "md": "MD-3", "label": "Folga"}, {"data": "2026-07-20", "md": "MD-2", "label": "Folga"}, {"data": "2026-07-21", "md": "MD-1", "label": "Tensão"}, {"data": "2026-07-22", "md": "MD", "label": "JP4 - Naval 10h00"}, {"data": "2026-07-23", "md": "MD-2", "label": "Velocidade"}, {"data": "2026-07-24", "md": "MD-1", "label": "Ativação"}, {"data": "2026-07-25", "md": "MD", "label": "JP5 - Marco (F)"}, {"data": "2026-07-26", "md": "MD-3", "label": "Folga"}, {"data": "2026-07-27", "md": "MD-2", "label": "Recuperação"}, {"data": "2026-07-28", "md": "MD-1", "label": "Duração-"}, {"data": "2026-07-29", "md": "MD", "label": "JP6 - AFS 10h30 (F)"}, {"data": "2026-07-30", "md": "MD-2", "label": "Duração--"}, {"data": "2026-07-31", "md": "MD-1", "label": "Velocidade"}, {"data": "2026-08-01", "md": "MD", "label": "JP7-Limianos (C) 10h30"}, {"data": "2026-08-02", "md": "MD-7", "label": "Folga"}, {"data": "2026-08-03", "md": "MD-6", "label": "Folga"}, {"data": "2026-08-04", "md": "MD-5", "label": "Tensão"}, {"data": "2026-08-05", "md": "MD-4", "label": "Duração-"}, {"data": "2026-08-06", "md": "MD-3", "label": "Duração ++"}, {"data": "2026-08-07", "md": "MD-2", "label": "Velocidade"}, {"data": "2026-08-08", "md": "MD-1", "label": "Ativação"}, {"data": "2026-08-09", "md": "MD", "label": "Jornada 1"}, {"data": "2026-08-10", "md": "MD-5", "label": "Folga"}, {"data": "2026-08-11", "md": "MD-4", "label": "Tensão"}, {"data": "2026-08-12", "md": "MD-3", "label": "Duração ++"}, {"data": "2026-08-13", "md": "MD-2", "label": "Velocidade"}, {"data": "2026-08-14", "md": "MD-1", "label": "Ativação"}, {"data": "2026-08-15", "md": "MD", "label": "Jornada 2"}, {"data": "2026-08-16", "md": "MD-7", "label": "Folga"}, {"data": "2026-08-17", "md": "MD-6", "label": "Folga"}, {"data": "2026-08-18", "md": "MD-5", "label": "Tensão"}, {"data": "2026-08-19", "md": "MD-4", "label": "Duração-"}, {"data": "2026-08-20", "md": "MD-3", "label": "Duração ++"}, {"data": "2026-08-21", "md": "MD-2", "label": "Velocidade"}, {"data": "2026-08-22", "md": "MD-1", "label": "Ativação"}, {"data": "2026-08-23", "md": "MD", "label": "Jornada 3"}];
+
+let ROADMAP = [{"data": "2026-07-01", "md": "MD-10", "label": "Duração-", "distancia_pct": 65, "hsr_pct": 50, "sprint_pct": 40, "acc_dec_pct": 55}, {"data": "2026-07-02", "md": "MD-9", "label": "Duração-", "distancia_pct": 65, "hsr_pct": 50, "sprint_pct": 40, "acc_dec_pct": 55}, {"data": "2026-07-03", "md": "MD-8", "label": "Duração-", "distancia_pct": 65, "hsr_pct": 50, "sprint_pct": 40, "acc_dec_pct": 55}, {"data": "2026-07-04", "md": "MD-7", "label": "Tensão", "distancia_pct": 50, "hsr_pct": 35, "sprint_pct": 25, "acc_dec_pct": 70}, {"data": "2026-07-05", "md": "MD-6", "label": "Folga", "distancia_pct": 0, "hsr_pct": 0, "sprint_pct": 0, "acc_dec_pct": 0}, {"data": "2026-07-06", "md": "MD-5", "label": "Duração-", "distancia_pct": 65, "hsr_pct": 50, "sprint_pct": 40, "acc_dec_pct": 55}, {"data": "2026-07-07", "md": "MD-4", "label": "Tensão", "distancia_pct": 50, "hsr_pct": 35, "sprint_pct": 25, "acc_dec_pct": 70}, {"data": "2026-07-08", "md": "MD-3", "label": "Duração +", "distancia_pct": 65, "hsr_pct": 50, "sprint_pct": 40, "acc_dec_pct": 55}, {"data": "2026-07-09", "md": "MD-2", "label": "Velocidade", "distancia_pct": 80, "hsr_pct": 115, "sprint_pct": 125, "acc_dec_pct": 90}, {"data": "2026-07-10", "md": "MD-1", "label": "Ativação", "distancia_pct": 30, "hsr_pct": 20, "sprint_pct": 15, "acc_dec_pct": 25}, {"data": "2026-07-11", "md": "MD", "label": "JP1-Vitoria B (F)", "distancia_pct": 215, "hsr_pct": 252, "sprint_pct": 222, "acc_dec_pct": 199}, {"data": "2026-07-12", "md": "MD-3", "label": "Folga", "distancia_pct": 0, "hsr_pct": 0, "sprint_pct": 0, "acc_dec_pct": 0}, {"data": "2026-07-13", "md": "MD-2", "label": "Duração-", "distancia_pct": 65, "hsr_pct": 50, "sprint_pct": 40, "acc_dec_pct": 55}, {"data": "2026-07-14", "md": "MD-1", "label": "Tensão", "distancia_pct": 50, "hsr_pct": 35, "sprint_pct": 25, "acc_dec_pct": 70}, {"data": "2026-07-15", "md": "MD", "label": "JP2 - Gil Vicente (F) 10h30", "distancia_pct": 215, "hsr_pct": 252, "sprint_pct": 222, "acc_dec_pct": 199}, {"data": "2026-07-16", "md": "MD-2", "label": "Recuperaçao", "distancia_pct": 65, "hsr_pct": 50, "sprint_pct": 40, "acc_dec_pct": 55}, {"data": "2026-07-17", "md": "MD-1", "label": "Ativação", "distancia_pct": 30, "hsr_pct": 20, "sprint_pct": 15, "acc_dec_pct": 25}, {"data": "2026-07-18", "md": "MD", "label": "JP3-Braga S23 (F)", "distancia_pct": 215, "hsr_pct": 252, "sprint_pct": 222, "acc_dec_pct": 199}, {"data": "2026-07-19", "md": "MD-3", "label": "Folga", "distancia_pct": 0, "hsr_pct": 0, "sprint_pct": 0, "acc_dec_pct": 0}, {"data": "2026-07-20", "md": "MD-2", "label": "Folga", "distancia_pct": 0, "hsr_pct": 0, "sprint_pct": 0, "acc_dec_pct": 0}, {"data": "2026-07-21", "md": "MD-1", "label": "Tensão", "distancia_pct": 50, "hsr_pct": 35, "sprint_pct": 25, "acc_dec_pct": 70}, {"data": "2026-07-22", "md": "MD", "label": "JP4 - Naval 10h00", "distancia_pct": 215, "hsr_pct": 252, "sprint_pct": 222, "acc_dec_pct": 199}, {"data": "2026-07-23", "md": "MD-2", "label": "Velocidade", "distancia_pct": 80, "hsr_pct": 115, "sprint_pct": 125, "acc_dec_pct": 90}, {"data": "2026-07-24", "md": "MD-1", "label": "Ativação", "distancia_pct": 30, "hsr_pct": 20, "sprint_pct": 15, "acc_dec_pct": 25}, {"data": "2026-07-25", "md": "MD", "label": "JP5 - Marco (F)", "distancia_pct": 215, "hsr_pct": 252, "sprint_pct": 222, "acc_dec_pct": 199}, {"data": "2026-07-26", "md": "MD-3", "label": "Folga", "distancia_pct": 0, "hsr_pct": 0, "sprint_pct": 0, "acc_dec_pct": 0}, {"data": "2026-07-27", "md": "MD-2", "label": "Recuperação", "distancia_pct": 65, "hsr_pct": 50, "sprint_pct": 40, "acc_dec_pct": 55}, {"data": "2026-07-28", "md": "MD-1", "label": "Duração-", "distancia_pct": 65, "hsr_pct": 50, "sprint_pct": 40, "acc_dec_pct": 55}, {"data": "2026-07-29", "md": "MD", "label": "JP6 - AFS 10h30 (F)", "distancia_pct": 215, "hsr_pct": 252, "sprint_pct": 222, "acc_dec_pct": 199}, {"data": "2026-07-30", "md": "MD-2", "label": "Duração--", "distancia_pct": 65, "hsr_pct": 50, "sprint_pct": 40, "acc_dec_pct": 55}, {"data": "2026-07-31", "md": "MD-1", "label": "Velocidade", "distancia_pct": 80, "hsr_pct": 115, "sprint_pct": 125, "acc_dec_pct": 90}, {"data": "2026-08-01", "md": "MD", "label": "JP7-Limianos (C) 10h30", "distancia_pct": 215, "hsr_pct": 252, "sprint_pct": 222, "acc_dec_pct": 199}, {"data": "2026-08-02", "md": "MD-7", "label": "Folga", "distancia_pct": 0, "hsr_pct": 0, "sprint_pct": 0, "acc_dec_pct": 0}, {"data": "2026-08-03", "md": "MD-6", "label": "Folga", "distancia_pct": 0, "hsr_pct": 0, "sprint_pct": 0, "acc_dec_pct": 0}, {"data": "2026-08-04", "md": "MD-5", "label": "Tensão", "distancia_pct": 50, "hsr_pct": 35, "sprint_pct": 25, "acc_dec_pct": 70}, {"data": "2026-08-05", "md": "MD-4", "label": "Duração-", "distancia_pct": 65, "hsr_pct": 50, "sprint_pct": 40, "acc_dec_pct": 55}, {"data": "2026-08-06", "md": "MD-3", "label": "Duração ++", "distancia_pct": 85, "hsr_pct": 65, "sprint_pct": 52, "acc_dec_pct": 72}, {"data": "2026-08-07", "md": "MD-2", "label": "Velocidade", "distancia_pct": 80, "hsr_pct": 115, "sprint_pct": 125, "acc_dec_pct": 90}, {"data": "2026-08-08", "md": "MD-1", "label": "Ativação", "distancia_pct": 30, "hsr_pct": 20, "sprint_pct": 15, "acc_dec_pct": 25}, {"data": "2026-08-09", "md": "MD", "label": "Jornada 1", "distancia_pct": 215, "hsr_pct": 252, "sprint_pct": 222, "acc_dec_pct": 199}, {"data": "2026-08-10", "md": "MD-5", "label": "Folga", "distancia_pct": 0, "hsr_pct": 0, "sprint_pct": 0, "acc_dec_pct": 0}, {"data": "2026-08-11", "md": "MD-4", "label": "Tensão", "distancia_pct": 50, "hsr_pct": 35, "sprint_pct": 25, "acc_dec_pct": 70}, {"data": "2026-08-12", "md": "MD-3", "label": "Duração ++", "distancia_pct": 85, "hsr_pct": 65, "sprint_pct": 52, "acc_dec_pct": 72}, {"data": "2026-08-13", "md": "MD-2", "label": "Velocidade", "distancia_pct": 80, "hsr_pct": 115, "sprint_pct": 125, "acc_dec_pct": 90}, {"data": "2026-08-14", "md": "MD-1", "label": "Ativação", "distancia_pct": 30, "hsr_pct": 20, "sprint_pct": 15, "acc_dec_pct": 25}, {"data": "2026-08-15", "md": "MD", "label": "Jornada 2", "distancia_pct": 215, "hsr_pct": 252, "sprint_pct": 222, "acc_dec_pct": 199}, {"data": "2026-08-16", "md": "MD-7", "label": "Folga", "distancia_pct": 0, "hsr_pct": 0, "sprint_pct": 0, "acc_dec_pct": 0}, {"data": "2026-08-17", "md": "MD-6", "label": "Folga", "distancia_pct": 0, "hsr_pct": 0, "sprint_pct": 0, "acc_dec_pct": 0}, {"data": "2026-08-18", "md": "MD-5", "label": "Tensão", "distancia_pct": 50, "hsr_pct": 35, "sprint_pct": 25, "acc_dec_pct": 70}, {"data": "2026-08-19", "md": "MD-4", "label": "Duração-", "distancia_pct": 65, "hsr_pct": 50, "sprint_pct": 40, "acc_dec_pct": 55}, {"data": "2026-08-20", "md": "MD-3", "label": "Duração ++", "distancia_pct": 85, "hsr_pct": 65, "sprint_pct": 52, "acc_dec_pct": 72}, {"data": "2026-08-21", "md": "MD-2", "label": "Velocidade", "distancia_pct": 80, "hsr_pct": 115, "sprint_pct": 125, "acc_dec_pct": 90}, {"data": "2026-08-22", "md": "MD-1", "label": "Ativação", "distancia_pct": 30, "hsr_pct": 20, "sprint_pct": 15, "acc_dec_pct": 25}, {"data": "2026-08-23", "md": "MD", "label": "Jornada 3", "distancia_pct": 215, "hsr_pct": 252, "sprint_pct": 222, "acc_dec_pct": 199}];
+
+function setStatus(elId, ok, msg){
+  document.getElementById(elId).innerHTML = `<div class="status ${ok?'ok':'err'}">${msg}</div>`;
+}
+// --- Ligação ao Supabase (base de dados partilhada na cloud) ---
+// A "anon key" é feita para ficar visível no código do lado do cliente — a Supabase protege
+// o acesso através das políticas de RLS definidas na tabela (ver setup_supabase.sql).
+const SUPABASE_URL = 'https://jklnppxpfqkekogyhgnt.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_o1kXfE_l-pmmCIQ7WQPW6w_JLs9kY0b';
+const SUPABASE_HEADERS = {
+  apikey: SUPABASE_ANON_KEY,
+  Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
+};
+async function getSeries(key){
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/kv_store?key=eq.${encodeURIComponent(key)}&select=value`, {
+      headers: SUPABASE_HEADERS
+    });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const rows = await res.json();
+    return rows.length ? rows[0].value : {};
+  }catch(e){
+    console.error('getSeries: erro a ler', key, e);
+    return {};
+  }
+}
+async function setSeries(key, obj){
+  try{
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/kv_store`, {
+      method: 'POST',
+      headers: {
+        ...SUPABASE_HEADERS,
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify({key, value: obj, updated_at: new Date().toISOString()})
+    });
+    if(!res.ok) throw new Error('HTTP ' + res.status + ' — confirma se correste o setup_supabase.sql');
+  }catch(e){
+    console.error('setSeries: erro a gravar', key, e);
+    throw e;
+  }
+}
+
+// Aceita: um objeto Date real (vindo do SheetJS com cellDates:true), ou uma string de
+// texto (vinda de um CSV do Google Sheets), nos formatos ISO ou "M/D/AAAA H:mm:ss" (padrão
+// do timestamp que o Google Forms grava na sheet).
+function parseFlexibleDate(v){
+  if(v instanceof Date && !isNaN(v)) return v;
+  if(v===undefined || v===null || v==='') return null;
+  const s = v.toString().trim();
+  // Google Forms → Google Sheets grava o timestamp como "AAAA/MM/DD HH:mm:ss" quando exportado em CSV.
+  const gform = s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if(gform){
+    return new Date(+gform[1], +gform[2]-1, +gform[3], +gform[4], +gform[5], +(gform[6]||0));
+  }
+  // Formato ISO (AAAA-MM-DD...)
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)){
+    const iso = new Date(s);
+    if(!isNaN(iso)) return iso;
+  }
+  // Formato "M/D/AAAA H:mm:ss" (US), fallback para outras origens de ficheiro.
+  const us = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if(us){
+    return new Date(+us[3], +us[1]-1, +us[2], +us[4], +us[5], +(us[6]||0));
+  }
+  const fallback = new Date(s);
+  if(!isNaN(fallback)) return fallback;
+  return null;
+}
+
+async function processWellnessRows(rows){
+  const series0 = await getSeries('series_wellness');
+  let count = 0; const datesSeen = new Set();
+  for(let i=1;i<rows.length;i++){
+    const r = rows[i];
+    if(!r || !r[1] || !r[0]) continue;
+    const ts = parseFlexibleDate(r[0]);
+    if(!ts) continue;
+    const dateStr = ts.toISOString().slice(0,10);
+    const player = resolveName(r[1]);
+    if(!player) continue;
+    const vals = [r[2],r[3],r[4],r[5],r[6]].map(Number);
+    if(vals.some(v=>isNaN(v))) continue;
+    if(!series0[player]) series0[player]={};
+    series0[player][dateStr] = {cansaco:vals[0],sono:vals[1],dor:vals[2],stress:vals[3],humor:vals[4],
+      painLocal:r[7]||null,painGrau:r[8]||null,painOutra:r[9]||null,painOutraGrau:r[10]||null};
+    count++; datesSeen.add(dateStr);
+  }
+  await setSeries('series_wellness', series0);
+  return {count, dias: datesSeen.size};
+}
+
+async function processPseRows(rows){
+  const series0 = await getSeries('series_pse');
+  let count = 0; const datesSeen = new Set();
+  for(let i=1;i<rows.length;i++){
+    const r = rows[i];
+    if(!r || !r[1] || !r[0]) continue;
+    const ts = parseFlexibleDate(r[0]);
+    if(!ts) continue;
+    const dateStr = ts.toISOString().slice(0,10);
+    const player = resolveName(r[1]);
+    if(!player) continue;
+    const rpe = Number(r[3]);
+    if(isNaN(rpe)) continue;
+    if(!series0[player]) series0[player]={};
+    series0[player][dateStr] = {tipo:r[2]||null, rpe:rpe,
+      painLocal:r[4]||null,painGrau:r[5]||null,painOutra:r[6]||null,painOutraGrau:r[7]||null};
+    count++; datesSeen.add(dateStr);
+  }
+  await setSeries('series_pse', series0);
+  return {count, dias: datesSeen.size};
+}
+
+async function handleWellness(){
+  const f = document.getElementById('wellnessFile').files[0];
+  if(!f){ setStatus('wellnessStatus', false, 'Escolhe um ficheiro primeiro.'); return; }
+  try{
+    const buf = await f.arrayBuffer();
+    const wb = XLSX.read(buf, {type:'array', cellDates:true});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, {header:1});
+    const {count, dias} = await processWellnessRows(rows);
+    setStatus('wellnessStatus', true, `Guardado: ${count} registos em ${dias} dias diferentes (datas lidas do próprio ficheiro).`);
+  }catch(e){ setStatus('wellnessStatus', false, 'Erro: ' + e.message); }
+}
+
+async function handlePSE(){
+  const f = document.getElementById('pseFile').files[0];
+  if(!f){ setStatus('pseStatus', false, 'Escolhe um ficheiro primeiro.'); return; }
+  try{
+    const buf = await f.arrayBuffer();
+    const wb = XLSX.read(buf, {type:'array', cellDates:true});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, {header:1});
+    const {count, dias} = await processPseRows(rows);
+    setStatus('pseStatus', true, `Guardado: ${count} registos em ${dias} dias diferentes (datas lidas do próprio ficheiro).`);
+  }catch(e){ setStatus('pseStatus', false, 'Erro: ' + e.message); }
+}
+
+// --- Fetch automático de Google Sheets publicados como CSV ---
+async function fetchCSVRows(url){
+  const res = await fetch(url, {cache:'no-store'});
+  if(!res.ok) throw new Error('HTTP ' + res.status + ' ao ir buscar o link.');
+  const text = await res.text();
+  const parsed = Papa.parse(text, {skipEmptyLines:true});
+  return parsed.data;
+}
+
+async function fetchAllSheets(){
+  const wUrl = document.getElementById('wellnessSheetUrl').value.trim();
+  const pUrl = document.getElementById('pseSheetUrl').value.trim();
+  if(!wUrl && !pUrl){ setStatus('fetchSheetsStatus', false, 'Cola pelo menos um link CSV antes de atualizar.'); return; }
+  if(wUrl) localStorage.setItem('wellness_sheet_url', wUrl);
+  if(pUrl) localStorage.setItem('pse_sheet_url', pUrl);
+  const msgs = [];
+  if(wUrl){
+    try{
+      const rows = await fetchCSVRows(wUrl);
+      const {count, dias} = await processWellnessRows(rows);
+      msgs.push(`Wellness: ${count} registos, ${dias} dias.`);
+    }catch(e){ msgs.push(`Wellness: erro — ${e.message} (confirma que o link está publicado como CSV e é público).`); }
+  }
+  if(pUrl){
+    try{
+      const rows = await fetchCSVRows(pUrl);
+      const {count, dias} = await processPseRows(rows);
+      msgs.push(`PSE: ${count} registos, ${dias} dias.`);
+    }catch(e){ msgs.push(`PSE: erro — ${e.message} (confirma que o link está publicado como CSV e é público).`); }
+  }
+  const ok = !msgs.some(m=>m.includes('erro'));
+  setStatus('fetchSheetsStatus', ok, msgs.join(' '));
+  if(ok) loadDashboard();
+}
+
+// Pré-preenche os campos com os links guardados da última vez (o script corre no
+// fim do <body>, portanto os inputs já existem no DOM neste ponto).
+(function initSheetUrls(){
+  const w = localStorage.getItem('wellness_sheet_url');
+  const p = localStorage.getItem('pse_sheet_url');
+  if(w) document.getElementById('wellnessSheetUrl').value = w;
+  if(p) document.getElementById('pseSheetUrl').value = p;
+})();
+
+// --- Nome da equipa / época, editáveis no título ---
+function renderTitle(){
+  const name = localStorage.getItem('team_name') || 'SC Vianense';
+  const season = localStorage.getItem('team_season') || '';
+  document.getElementById('mainTitle').textContent = name + ' — Performance OS' + (season ? ` (${season})` : '');
+}
+function editTitle(){
+  document.getElementById('teamNameInput').value = localStorage.getItem('team_name') || 'SC Vianense';
+  document.getElementById('teamSeasonInput').value = localStorage.getItem('team_season') || '';
+  document.getElementById('titleEditBox').style.display = 'block';
+}
+function cancelEditTitle(){
+  document.getElementById('titleEditBox').style.display = 'none';
+}
+function saveTitle(){
+  const name = document.getElementById('teamNameInput').value.trim() || 'SC Vianense';
+  const season = document.getElementById('teamSeasonInput').value.trim();
+  localStorage.setItem('team_name', name);
+  localStorage.setItem('team_season', season);
+  document.getElementById('titleEditBox').style.display = 'none';
+  renderTitle();
+}
+renderTitle();
+
+// --- Código de acesso (portão simples, não é segurança forte — ver nota no setup_supabase.sql) ---
+const PASSCODE_HASH = '5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5';
+async function sha256Hex(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function checkPasscode(){
+  const val = document.getElementById('passcodeInput').value;
+  const hash = await sha256Hex(val);
+  if(hash === PASSCODE_HASH){
+    localStorage.setItem('app_auth_ok', '1');
+    document.body.classList.remove('locked');
+  } else {
+    document.getElementById('passcodeStatus').innerHTML = '<div class="status err">Código errado.</div>';
+  }
+}
+document.getElementById('passcodeInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter') checkPasscode(); });
+if(localStorage.getItem('app_auth_ok') === '1'){
+  document.body.classList.remove('locked');
+}
+
+async function handleGPS(){
+  const f = document.getElementById('gpsFile').files[0];
+  if(!f){ setStatus('gpsStatus', false, 'Escolhe um ficheiro primeiro.'); return; }
+  try{
+    const text = await readTextSmart(f);
+    const parsed = Papa.parse(text, {skipEmptyLines:true});
+    const rows = parsed.data;
+    let headerIdx = -1;
+    for(let i=0;i<rows.length;i++){ if(rows[i][0] && rows[i][0].toString().trim()==='Player Name'){ headerIdx=i; break; } }
+    if(headerIdx===-1){ setStatus('gpsStatus', false, 'Não encontrei a linha "Player Name" no ficheiro.'); return; }
+    const header = rows[headerIdx].map(h=>h.trim());
+    const colIdx = {};
+    ['Period Name','Distance','Player Load','High Speed Distance','Sprint Distance','Accel + Decel Efforts','Duration','Posição','Position','Max Velocity','Max Speed'].forEach(c=>{ colIdx[c]=header.indexOf(c); });
+    if(colIdx['Period Name']<0){ setStatus('gpsStatus', false, 'Não encontrei a coluna "Period Name" (data) no ficheiro.'); return; }
+    const series = await getSeries('series_gps');
+    const positions = await getSeries('series_positions');
+    const datesSeen = new Set();
+    const touchedThisUpload = new Set(); // evita somar em cima de uploads anteriores do mesmo dia
+    let count = 0, skippedBase = 0;
+    for(let i=headerIdx+1;i<rows.length;i++){
+      const r = rows[i];
+      if(!r || !r[0]) continue;
+      const dateRaw = r[colIdx['Period Name']];
+      if(!dateRaw || !dateRaw.includes('/')){ continue; }
+      const parts = dateRaw.split('/');
+      if(parts.length!==3){ continue; }
+      const dateStr = `${parts[2]}-${parts[0].padStart(2,'0')}-${parts[1].padStart(2,'0')}`;
+      const player = resolveName(r[0]);
+      if(!player) continue;
+      const get = (col) => { const idx=colIdx[col]; if(idx<0||r[idx]===undefined||r[idx]==='') return 0; const v=parseFloat(r[idx]); return isNaN(v)?0:v; };
+      let durMin = 0;
+      const durIdx = colIdx['Duration'];
+      if(durIdx>=0 && r[durIdx] && r[durIdx].includes(':')){
+        const p = r[durIdx].split(':').map(Number);
+        durMin = (p[0]||0)*60 + (p[1]||0) + (p[2]||0)/60;
+      }
+      if(!series[player]) series[player]={};
+      const touchKey = player+'|'+dateStr;
+      if(!series[player][dateStr] || !touchedThisUpload.has(touchKey)){
+        // primeira vez que este jogador+data aparece NESTE upload: substitui em vez de somar
+        // (evita duplicar valores se o mesmo dia for carregado mais do que uma vez)
+        series[player][dateStr] = {distancia:0,hsr:0,sprint:0,acc_dec:0,duracao:0,maxVel:0};
+        touchedThisUpload.add(touchKey);
+      }
+      series[player][dateStr].distancia += get('Distance');
+      series[player][dateStr].hsr += get('High Speed Distance');
+      series[player][dateStr].sprint += get('Sprint Distance');
+      series[player][dateStr].acc_dec += get('Accel + Decel Efforts');
+      series[player][dateStr].duracao = (series[player][dateStr].duracao||0) + durMin;
+      const velIdx = colIdx['Max Velocity']>=0 ? colIdx['Max Velocity'] : colIdx['Max Speed'];
+      if(velIdx>=0 && r[velIdx]!==undefined && r[velIdx]!==''){
+        const v = parseFloat(r[velIdx]);
+        if(!isNaN(v)) series[player][dateStr].maxVel = Math.max(series[player][dateStr].maxVel||0, v);
+      }
+      count++; datesSeen.add(dateStr);
+      const posIdx = colIdx['Posição']>=0 ? colIdx['Posição'] : colIdx['Position'];
+      if(posIdx>=0 && r[posIdx]){
+        const posRaw = r[posIdx].toString().trim().toUpperCase();
+        if(['DC','LAT','MC','EXT','AC'].includes(posRaw)) positions[player] = posRaw;
+      }
+    }
+    await setSeries('series_gps', series);
+    if(Object.keys(positions).length) await setSeries('series_positions', positions);
+    // Auto-detetar jogos: se o calendário (ROADMAP) já classifica alguma destas datas como jogo,
+    // marca a sessão automaticamente (sem sobrepor uma sessão já preenchida à mão).
+    let autoGames = 0;
+    const sessionsSeries = await getSeries('series_sessions');
+    for(const d of datesSeen){
+      const roadmapDay = ROADMAP.find(r=>r.data===d);
+      if(roadmapDay && classifyDayLabel(roadmapDay.label)==='JOGO' && !sessionsSeries[d]){
+        sessionsSeries[d] = {tipo:'Jogo', duracao:null, notas:`(detetado automaticamente do calendário: ${roadmapDay.label})`};
+        autoGames++;
+      }
+    }
+    if(autoGames>0) await setSeries('series_sessions', sessionsSeries);
+    const posMsg = Object.keys(positions).length ? ` Posição capturada para ${Object.keys(positions).length} jogador(es).` : ' (sem coluna de posição neste ficheiro)';
+    setStatus('gpsStatus', true, `Guardado: ${count} registos em ${datesSeen.size} dias diferentes (datas e duração lidas do próprio ficheiro).${autoGames>0 ? ` ${autoGames} dia(s) marcado(s) automaticamente como Jogo.` : ''}${posMsg}`);
+  }catch(e){ setStatus('gpsStatus', false, 'Erro: ' + e.message); }
+}
+
+// Confirma que uma string é uma data válida no formato AAAA-MM-DD (evita crashes quando
+// aparece uma chave corrompida nos dados guardados, ex.: de um upload antigo com bug).
+function isValidDateStr(s){
+  if(!s || typeof s !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const d = new Date(s+'T00:00:00');
+  return !isNaN(d.getTime());
+}
+function windowAvg(dateMap, refDateStr, days, key, flat){
+  if(!isValidDateStr(refDateStr)) return 0;
+  const ref = new Date(refDateStr+'T00:00:00');
+  let sum = 0;
+  for(let i=0;i<days;i++){
+    const d = new Date(ref); d.setDate(d.getDate()-i);
+    const ds = d.toISOString().slice(0,10);
+    if(flat){
+      if(dateMap[ds]!==undefined) sum += dateMap[ds];
+    } else {
+      if(dateMap[ds] && dateMap[ds][key]!==undefined) sum += dateMap[ds][key];
+    }
+  }
+  return sum/days;
+}
+
+async function computeAllMetrics(refDate){
+  const gps = await getSeries('series_gps');
+  const wellness = await getSeries('series_wellness');
+  const pse = await getSeries('series_pse');
+  const allPlayers = new Set([...Object.keys(gps), ...Object.keys(wellness), ...Object.keys(pse)]);
+  const out = {};
+  for(const player of allPlayers){
+    const entry = {name:player, hasGPS: !!gps[player]};
+    if(gps[player]){
+      entry.multimetric = {};
+      for(const vkey of ['distancia','hsr','sprint','acc_dec']){
+        const acute = windowAvg(gps[player], refDate, 7, vkey);
+        const chronic = windowAvg(gps[player], refDate, 28, vkey);
+        if(chronic>0){
+          entry.multimetric[vkey] = {acute_avg:acute, chronic_avg:chronic, ratio: Math.round((acute/chronic)*100)/100};
+        }
+      }
+      const nSessions28 = Object.keys(gps[player]).filter(d=>{
+        const dd = (new Date(refDate)-new Date(d))/86400000; return dd>=0 && dd<28;
+      }).length;
+      entry.nSessions28 = nSessions28;
+    }
+    // Métrica combinada nova: mistura dois rácios ACWR — sRPE (RPE x Duração, quando há duração
+    // fiável nesse dia) e Distância (sempre disponível). Cada um é primeiro calculado como o seu
+    // próprio ACWR (7d/28d); a métrica combinada é a média dos dois rácios quando ambos existem,
+    // ou cai para o que estiver disponível quando só há um dos dois.
+    if(gps[player]){
+      const srpeMap = {};
+      if(pse[player]){
+        for(const d in gps[player]){
+          const dur = gps[player][d].duracao;
+          const rpeRec = pse[player][d];
+          if(dur && rpeRec && rpeRec.rpe) srpeMap[d] = dur * rpeRec.rpe;
+        }
+      }
+      const nSrpeDays = Object.keys(srpeMap).length;
+      entry.nSrpeDays = nSrpeDays;
+      let srpeRatio = null;
+      if(nSrpeDays>=5){
+        const acuteS = windowAvg(srpeMap, refDate, 7, null, true);
+        const chronicS = windowAvg(srpeMap, refDate, 28, null, true);
+        if(chronicS>0){
+          entry.srpe = {acute_avg:acuteS, chronic_avg:chronicS, ratio: Math.round((acuteS/chronicS)*100)/100};
+          srpeRatio = entry.srpe.ratio;
+        }
+      }
+      const distRatio = (entry.multimetric && entry.multimetric.distancia) ? entry.multimetric.distancia.ratio : null;
+      if(srpeRatio!=null && distRatio!=null){
+        entry.combined = {ratio: Math.round(((srpeRatio+distRatio)/2)*100)/100, source:'sRPE + Distância (média dos dois rácios)'};
+      } else if(srpeRatio!=null){
+        entry.combined = {ratio: srpeRatio, source:'sRPE (sem distância suficiente)'};
+      } else if(distRatio!=null){
+        entry.combined = {ratio: distRatio, source:'Distância (sem RPE+duração suficientes para sRPE)'};
+      }
+    }
+    if(wellness[player]){
+      const dates = Object.keys(wellness[player]).sort();
+      entry.nDaysWellness = dates.length;
+      const scores = dates.map(d=>{ const w=wellness[player][d]; return (w.cansaco+w.sono+w.dor+w.stress+w.humor)/5; });
+      if(dates.length>=5){
+        const mean = scores.reduce((a,b)=>a+b,0)/scores.length;
+        const std = Math.sqrt(scores.reduce((a,b)=>a+(b-mean)**2,0)/scores.length) || 0.01;
+        entry.wellToday = scores[scores.length-1];
+        entry.wellZ = Math.round(((entry.wellToday-mean)/std)*100)/100;
+      }
+    }
+    let pain = null;
+    for(const src of [wellness, pse]){
+      if(src[player]){
+        const dates = Object.keys(src[player]).sort();
+        for(let i=dates.length-1;i>=0;i--){
+          const rec = src[player][dates[i]];
+          const parts = [];
+          if(rec.painLocal) parts.push(rec.painLocal + (rec.painGrau?` (${rec.painGrau}/10)`:''));
+          if(rec.painOutra) parts.push(rec.painOutra + (rec.painOutraGrau?` (${rec.painOutraGrau}/10)`:''));
+          if(parts.length){
+            const daysAgo = Math.round((new Date(refDate)-new Date(dates[i]))/86400000);
+            if(!pain || daysAgo < pain.daysAgo) pain = {desc:parts.join('; '), daysAgo};
+            break;
+          }
+        }
+      }
+    }
+    entry.pain = pain;
+    // recorde de velocidade máxima e última vez perto desse recorde (>=90%)
+    if(gps[player]){
+      let recordVel = 0, recordDate = null;
+      for(const d in gps[player]){
+        const v = gps[player][d].maxVel || 0;
+        if(v>recordVel){ recordVel = v; recordDate = d; }
+      }
+      if(recordVel>0){
+        const threshold = recordVel*0.9;
+        const near90dates = Object.keys(gps[player]).filter(d => (gps[player][d].maxVel||0) >= threshold).sort();
+        const last90date = near90dates.length ? near90dates[near90dates.length-1] : null;
+        entry.speedRecord = {
+          value: Math.round(recordVel*10)/10,
+          date: recordDate,
+          daysAgoRecord: Math.round((new Date(refDate)-new Date(recordDate))/86400000),
+          last90date: last90date,
+          daysAgo90: last90date ? Math.round((new Date(refDate)-new Date(last90date))/86400000) : null
+        };
+      }
+    }
+    out[player] = entry;
+  }
+  return out;
+}
+
+async function loadDashboard(){
+  document.getElementById('dashSubline').textContent = 'A calcular...';
+  try{
+  const gps = await getSeries('series_gps');
+  const wellness = await getSeries('series_wellness');
+  const allDates = new Set();
+  Object.values(gps).forEach(pd=>Object.keys(pd).forEach(d=>allDates.add(d)));
+  Object.values(wellness).forEach(pd=>Object.keys(pd).forEach(d=>allDates.add(d)));
+  const validDates = [...allDates].filter(isValidDateStr);
+  if(validDates.length===0){
+    document.getElementById('dashSubline').textContent = 'Ainda não há dados guardados. Faz upload na aba anterior.';
+    document.getElementById('dashGroups').innerHTML = '';
+    return;
+  }
+  const lastDate = validDates.sort().slice(-1)[0];
+  const metrics = await computeAllMetrics(lastDate);
+
+  const results = [];
+  for(const player in metrics){
+    const m = metrics[player];
+    let level = 0; const reasons = [];
+    if(!m.hasGPS){
+      // Nunca teve GPS nesta app -- provável guarda-redes, não é um "sem dados" preocupante
+      results.push({name:player, level:-1, label:'Sem GPS (provável guarda-redes)', reasons:['Este jogador nunca teve registos de GPS carregados — se for guarda-redes, é esperado e não precisa de sweet spot.'], pain:m.pain, progression:null, wellZ:m.wellZ});
+      continue;
+    }
+    // ACWR principal: métrica combinada (sRPE + Distância, ver computeAllMetrics)
+    const ss = m.combined;
+    const ssName = ss ? ss.source : null;
+    const shortHistory = (m.nSessions28||0) < 10;
+    let progression = null;
+    if(ss){
+      if(ss.ratio>1.5){
+        level=2;
+        reasons.push(`ACWR (${ssName}): carga muito acima do normal esta semana — fora da banda do sweet spot.`);
+        progression = `<b>Reduzir a exposição de hoje/amanhã, dentro do mesmo treino de grupo:</b> sair mais cedo (ex: últimos 15-20 min, normalmente a parte mais intensa — jogo reduzido, sprints), ou fazer essa parte final em versão condicionada/reduzida em vez de completa com o grupo. <b>Repetir isto nos próximos 2-3 dias</b> até o rácio (agora ${ss.ratio}x) descer perto de 1.3x — a partir daí volta a fazer a sessão completa como o resto do grupo.`;
+      } else if(ss.ratio>1.3){
+        level=1;
+        reasons.push(`ACWR (${ssName}): carga um pouco acima do normal — fora da banda do sweet spot.`);
+        progression = `<b>Fazer a sessão normal com o grupo, mas sem trabalho complementar extra hoje</b> (nem antes nem depois do treino). Se a sessão tiver uma parte final de alta intensidade (jogo reduzido, sprints repetidos), considerar reduzir só essa parte. Não precisa de mais do que isto — o rácio (${ss.ratio}x) tende a normalizar sozinho em poucos dias.`;
+      } else if(ss.ratio<0.8 || shortHistory){
+        level=1;
+        if(ss.ratio<0.8) reasons.push(`ACWR (${ssName}): carga abaixo do normal — fora da banda do sweet spot.`);
+        if(shortHistory) reasons.push(`Histórico curto (${m.nSessions28||0} sessões em 28 dias) — provável chegada recente ao plantel ou regresso após paragem; a carga "habitual" ainda não é fiável.`);
+        if(ss.ratio>0.15 && ss.ratio<0.8){
+          const weeksSafeRaw = Math.log(0.8/ss.ratio)/Math.log(1.10);
+          const weeksFastRaw = Math.log(0.8/ss.ratio)/Math.log(1.18);
+          const cap = (w) => w>8 ? '8+' : Math.ceil(w);
+          progression = `<b>Fazer a sessão normal com o grupo (sem restrições) e acrescentar trabalho complementar individual</b> — ex: 10-15 min de corrida contínua ou circuito, antes ou depois do treino — já que o treino de grupo sozinho não chega para preencher a carga em falta. <b>Ritmo seguro (~10%/semana de aumento no complemento):</b> ~${cap(weeksSafeRaw)} semana(s) até à zona normal. <b>Ritmo mais rápido (~18%/semana, só com boa resposta clínica e sob supervisão):</b> ~${cap(weeksFastRaw)} semana(s). ${weeksSafeRaw>8 ? 'Desvio muito grande — esta é só uma estimativa aproximada; para paragens longas, o plano de reintegração deve ser definido com o preparador físico.' : 'Reavaliar sinais (wellness, dor) antes de cada aumento do complemento.'}`;
+        } else {
+          progression = `Carga aguda muito baixa (praticamente parado) ou histórico ainda muito curto para projetar semanas com confiança. <b>O que fazer:</b> treino condicionado (versão reduzida da sessão de grupo) e reavaliar semana a semana — só entrar na sessão completa quando já houver alguns dias de carga real para comparar.`;
+        }
+      } else {
+        level=0;
+        if(ss.ratio>1.15){
+          reasons.push(`ACWR (${ssName}): dentro do sweet spot, mas a aproximar-se do limite superior (1.3x).`);
+          progression = `<b>Vigiar, sem ação já necessária.</b> Fazer a sessão normal, mas evitar acrescentar trabalho complementar extra nos próximos dias — se continuar a subir, passa a "acima do normal" em breve.`;
+        } else if(ss.ratio<0.85){
+          reasons.push(`ACWR (${ssName}): dentro do sweet spot, mas a aproximar-se do limite inferior (0.8x).`);
+          progression = `<b>Vigiar, sem ação já necessária.</b> Fazer a sessão normal com o grupo — se continuar a descer, considerar já um pequeno complemento individual antes de passar para "abaixo do normal".`;
+        } else {
+          reasons.push(`ACWR (${ssName}): dentro do sweet spot.`);
+          progression = `<b>Sem ação necessária.</b> Fazer a sessão normal com o resto do grupo, sem reduções nem complementos.`;
+        }
+      }
+    } else {
+      reasons.push('Ainda sem dados suficientes (GPS/PSE) para calcular o sweet spot principal.');
+      progression = `Assim que houver alguns dias de GPS (e idealmente também PSE), esta secção passa a mostrar uma indicação prática de progressão para este jogador.`;
+    }
+    if(m.wellZ!==undefined){
+      if(m.wellZ<-1.5){ level=Math.max(level,2); reasons.push('Bem-estar claramente pior que o normal.'); }
+      else if(m.wellZ<-0.75){ level=Math.max(level,1); reasons.push('Bem-estar ligeiramente pior que o normal.'); }
+    }
+    const label = {2:'Falar com o jogador antes de treinar',1:'Vigiar / confirmar antes de treinar',0:'Pode treinar normalmente'}[level];
+    results.push({name:player, level, label, reasons, pain:m.pain, multimetric:m.multimetric, progression, wellZ:m.wellZ, nSessions28:m.nSessions28, acwr: ss?ss.ratio:null, acwrSource: ssName, speedRecord: m.speedRecord});
+  }
+  results.sort((a,b)=> b.level-a.level || a.name.localeCompare(b.name));
+
+  const n2=results.filter(r=>r.level===2).length, n1=results.filter(r=>r.level===1).length, n0=results.filter(r=>r.level===0).length, nGK=results.filter(r=>r.level===-1).length;
+  document.getElementById('dashSubline').innerHTML = `Dados até <b style="color:var(--text)">${lastDate}</b> · ${n2} para falar antes de treinar · ${n1} para vigiar · ${n0} sem alertas${nGK?` · ${nGK} sem GPS (guarda-redes)`:''} · ACWR principal = <b>sRPE</b> (ou Distância quando não há RPE+duração suficientes) — sweet spot é a banda 0.8–1.3.`;
+
+  const cfg = {2:{color:'var(--red)',label:'Falar com o jogador antes de treinar'},1:{color:'var(--yellow)',label:'Vigiar / confirmar'},0:{color:'var(--green)',label:'Pode treinar normalmente'},'-1':{color:'var(--blue)',label:'Sem GPS (guarda-redes)'}};
+  const groupsEl = document.getElementById('dashGroups');
+  groupsEl.innerHTML = `<div class="note">ACWR principal = <b>métrica combinada nova</b>: mistura o ACWR de sRPE (RPE × duração da sessão — a definição original de Gabbett 2016) com o ACWR de Distância total (alternativa validada na literatura). Quando ambos existem para um jogador, a métrica combinada é a média dos dois rácios; quando só um existe (falta duração fiável nalguns dias, por exemplo), usa-se só esse — sempre identificado em cada cartão qual foi usado. HSR, Sprint e Acc/Dec continuam como detalhe de apoio, não bandas de sweet spot independentes.</div>`;
+  [2,1,0,-1].forEach(level=>{
+    const items = results.filter(r=>r.level===level);
+    if(!items.length) return;
+    const c = cfg[level];
+    const section = document.createElement('div');
+    section.innerHTML = `<div class="glabel"><span class="gdot" style="background:${c.color}"></span>${c.label} (${items.length})</div>`;
+    const list = document.createElement('div'); list.className='plist';
+    items.forEach(d=>{
+      const card = document.createElement('div'); card.className='pcard'; card.style.setProperty('--c', c.color);
+      let acwrBadge = '';
+      if(d.acwr!=null){
+        const inBand = d.acwr>=0.8 && d.acwr<=1.3;
+        const acColor = inBand ? 'var(--green)' : (d.acwr>1.5 || d.acwr<0.6 ? 'var(--red)' : 'var(--yellow)');
+        acwrBadge = `<div style="display:inline-block;background:${acColor};color:#0b1210;font-weight:700;font-size:13px;padding:2px 10px;border-radius:20px;margin-bottom:6px;">ACWR ${d.acwr}${inBand?' · dentro do sweet spot':' · fora do sweet spot'}</div>`;
+      }
+      const progBorder = {2:'rgba(200,84,80,0.4)',1:'rgba(217,164,65,0.4)',0:'rgba(63,174,106,0.4)','-1':'rgba(91,155,213,0.4)'}[d.level];
+      const progHtml = d.progression ? `<div class="cargabox" style="border:1px solid ${progBorder}"><b style="color:${c.color}">Progressão prática:</b> ${d.progression}</div>` : '';
+      let painHtml = '';
+      if(d.pain){
+        const da = d.pain.daysAgo;
+        let pc, pcBg, pcBorder;
+        if(da<=2){ pc='var(--red)'; pcBg='rgba(200,84,80,0.08)'; pcBorder='rgba(200,84,80,0.3)'; }
+        else if(da<=5){ pc='var(--yellow)'; pcBg='rgba(217,164,65,0.08)'; pcBorder='rgba(217,164,65,0.3)'; }
+        else if(da<=10){ pc='var(--muted)'; pcBg='rgba(142,166,154,0.08)'; pcBorder='rgba(142,166,154,0.3)'; }
+        else { pc='var(--muted)'; pcBg='rgba(142,166,154,0.04)'; pcBorder='rgba(142,166,154,0.15)'; }
+        painHtml = `<div class="painbox" style="--pc:${pc};--pc-bg:${pcBg};--pc-border:${pcBorder};">⚠ Dor reportada (há ${da}d): ${d.pain.desc}</div>`;
+      }
+      let speedHtml = '';
+      if(d.speedRecord){
+        const sr = d.speedRecord;
+        const color90 = sr.daysAgo90==null ? 'var(--muted)' : (sr.daysAgo90<=7 ? 'var(--green)' : (sr.daysAgo90<=21 ? 'var(--yellow)' : 'var(--red)'));
+        speedHtml = `<div class="preason">🏃 Recorde de velocidade: <b style="color:var(--text)">${sr.value} km/h</b> (${sr.date}, há ${sr.daysAgoRecord}d) · Última vez ≥90% do recorde: <b style="color:${color90}">${sr.last90date ? `${sr.last90date} (há ${sr.daysAgo90}d)` : 'nunca'}</b></div>`;
+      }
+      card.innerHTML = `<div class="pname">${d.name}</div>${acwrBadge}${d.reasons.map(r=>`<div class="preason">${r}</div>`).join('')}
+        ${speedHtml}
+        ${painHtml}
+        ${progHtml}`;
+      list.appendChild(card);
+    });
+    section.appendChild(list); groupsEl.appendChild(section);
+  });
+  }catch(e){
+    document.getElementById('dashSubline').innerHTML = `<span style="color:var(--red)">Erro ao calcular: ${e.message}</span>`;
+    console.error(e);
+  }
+}
+
+async function loadHistory(){
+  const tbody = document.querySelector('#historyTable tbody');
+  try{
+  const gps = await getSeries('series_gps');
+  const wellness = await getSeries('series_wellness');
+  const pse = await getSeries('series_pse');
+  const sessions = await getSeries('series_sessions');
+  const allDates = new Set();
+  Object.values(gps).forEach(pd=>Object.keys(pd).forEach(d=>allDates.add(d)));
+  Object.values(wellness).forEach(pd=>Object.keys(pd).forEach(d=>allDates.add(d)));
+  Object.values(pse).forEach(pd=>Object.keys(pd).forEach(d=>allDates.add(d)));
+  Object.keys(sessions).forEach(d=>allDates.add(d));
+  tbody.innerHTML = '';
+  [...allDates].sort().reverse().forEach(d=>{
+    const hasW = Object.values(wellness).some(pd=>pd[d]);
+    const hasP = Object.values(pse).some(pd=>pd[d]);
+    const hasG = Object.values(gps).some(pd=>pd[d]);
+    const hasS = !!sessions[d];
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${d}</td><td>${hasW?'✓':'—'}</td><td>${hasP?'✓':'—'}</td><td>${hasG?'✓':'—'}</td><td>${hasS?sessions[d].tipo:'—'}</td>
+      <td><button class="rowbtn" onclick="deleteDay('${d}')">Apagar dia</button></td>`;
+    tbody.appendChild(tr);
+  });
+  }catch(e){
+    tbody.innerHTML = `<tr><td colspan="6" style="color:var(--red)">Erro ao carregar: ${e.message}</td></tr>`;
+    console.error(e);
+  }
+}
+
+async function deleteDay(date){
+  if(!confirm(`Apagar todos os dados de ${date}?`)) return;
+  for(const key of ['series_gps','series_wellness','series_pse']){
+    const series = await getSeries(key);
+    for(const p in series) delete series[p][date];
+    await setSeries(key, series);
+  }
+  const sessions = await getSeries('series_sessions');
+  delete sessions[date];
+  await setSeries('series_sessions', sessions);
+  loadHistory();
+}
+
+function levenshtein(a,b){
+  const dp = Array(a.length+1).fill(null).map(()=>Array(b.length+1).fill(0));
+  for(let i=0;i<=a.length;i++) dp[i][0]=i;
+  for(let j=0;j<=b.length;j++) dp[0][j]=j;
+  for(let i=1;i<=a.length;i++){
+    for(let j=1;j<=b.length;j++){
+      dp[i][j] = a[i-1]===b[j-1] ? dp[i-1][j-1] : 1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
+    }
+  }
+  return dp[a.length][b.length];
+}
+// Último recurso para nomes já corrompidos antes da correção de codificação (com "�" ou "Ã..."
+// em vez do acento original) — a informação exata já se perdeu, por isso compara por semelhança
+// (distância de edição) em vez de correspondência exata. Só usado na limpeza manual, nunca no
+// upload normal, para não arriscar juntar jogadores errados por engano.
+function fuzzyResolve(rawName){
+  let cleaned = norm(rawName).replace(/\ufffd/g,'').replace(/Ã./g,'');
+  let best=null, bestDist=Infinity, bestLen=0;
+  for(const c of CANONICAL){
+    const cn = norm(c);
+    const d = levenshtein(cleaned, cn);
+    if(d<bestDist){ bestDist=d; best=c; bestLen=cn.length; }
+  }
+  // limite proporcional ao tamanho do nome (em vez de fixo) -- nomes com dois ou mais acentos
+  // corrompidos (ex: "Moisés Conceição" -> "Mois?s Concei??o") perdem mais carateres de uma vez
+  const threshold = Math.max(2, Math.ceil(bestLen*0.2));
+  return bestDist<=threshold ? best : null;
+}
+
+async function resetGpsData(){
+  if(!confirm('Isto apaga TODO o histórico de GPS guardado neste browser (distância, HSR, sprint, acc/dec, posições) — wellness, PSE e calendário ficam intactos. Usa isto se suspeitas de dados antigos corrompidos (de antes de correções recentes). Depois disto, volta a carregar os teus ficheiros de GPS. Não pode ser desfeito. Continuar?')) return;
+  try{
+    await setSeries('series_gps', {});
+    await setSeries('series_positions', {});
+    setStatus('cleanupStatus', true, 'Histórico de GPS apagado. Volta a carregar os ficheiros de GPS na aba "Upload diário" para reconstruir os dados, já com as correções mais recentes aplicadas.');
+  }catch(e){
+    setStatus('cleanupStatus', false, 'Erro: ' + e.message);
+  }
+}
+
+async function cleanupPlayers(){
+  if(!confirm('Isto vai juntar jogadores duplicados (ex: "João Castro" e "Joao Castro", incluindo nomes já corrompidos com "�") no nome correto, e remover jogadores excluídos (ex: Pedro Caeiro) de todos os dados guardados. Não pode ser desfeito. Continuar?')) return;
+  try{
+    let mergedCount = 0, removedCount = 0, fuzzyCount = 0;
+    for(const key of ['series_gps','series_wellness','series_pse']){
+      const series = await getSeries(key);
+      const newSeries = {};
+      for(const rawName in series){
+        let canonicalName = resolveName(rawName);
+        if(canonicalName && canonicalName===rawName.trim() && /[\ufffd]|Ã./.test(rawName)){
+          // não resolveu por alias/canónico exato, mas tem sinais de corrupção -- tenta aproximado
+          const fuzzy = fuzzyResolve(rawName);
+          if(fuzzy){ canonicalName = fuzzy; fuzzyCount++; }
+        }
+        if(!canonicalName){ removedCount++; continue; } // jogador excluído
+        if(canonicalName!==rawName) mergedCount++;
+        if(!newSeries[canonicalName]) newSeries[canonicalName] = {};
+        for(const date in series[rawName]){
+          if(!newSeries[canonicalName][date]) newSeries[canonicalName][date] = series[rawName][date];
+        }
+      }
+      await setSeries(key, newSeries);
+    }
+    setStatus('cleanupStatus', true, `Limpeza concluída: ${mergedCount} variante(s) de nome juntas (${fuzzyCount} por semelhança, nomes já corrompidos), ${removedCount} registo(s) de jogador(es) excluído(s) removidos. Atualiza as abas para veres o resultado.`);
+  }catch(e){
+    setStatus('cleanupStatus', false, 'Erro: ' + e.message);
+  }
+}
+
+async function exportBackup(){
+  const data = {
+    series_gps: await getSeries('series_gps'),
+    series_wellness: await getSeries('series_wellness'),
+    series_pse: await getSeries('series_pse'),
+    series_sessions: await getSeries('series_sessions'),
+    exported_at: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `sc_vianense_backup_${todayStr()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function importBackup(){
+  const f = document.getElementById('importFile').files[0];
+  if(!f){ setStatus('backupStatus', false, 'Escolhe um ficheiro de backup primeiro.'); return; }
+  try{
+    const text = await f.text();
+    const data = JSON.parse(text);
+    if(!confirm('Isto substitui TODOS os dados guardados atualmente neste browser pelos do ficheiro. Continuar?')) return;
+    for(const key of ['series_gps','series_wellness','series_pse','series_sessions']){
+      if(data[key]) await setSeries(key, data[key]);
+    }
+    setStatus('backupStatus', true, 'Backup importado com sucesso.');
+    loadHistory();
+  }catch(e){
+    setStatus('backupStatus', false, 'Erro ao importar: ' + e.message);
+  }
+}
+
+const BENCHMARK = {"distancia": {"pl":{"lo":9500,"hi":12500,"mid":10750}, "liga3":{"lo":8740,"hi":11500,"mid":9890}}, "hsr": {"pl":{"lo":900,"hi":1600,"mid":1150}, "liga3":{"lo":702,"hi":1248,"mid":897}}, "sprint": {"pl":{"lo":230,"hi":500,"mid":350}, "liga3":{"lo":150,"hi":325,"mid":228}}, "acc_dec": {"pl":{"lo":280,"hi":460,"mid":370}, "liga3":{"lo":238,"hi":391,"mid":314}}};
+const POS_BENCH = {"DC": {"label": "Defesa Central", "distancia": {"pl":{"lo":8307,"hi":9773,"mid":9040},"liga3":{"lo":7642,"hi":8991,"mid":8316}}, "hsr": {"pl":{"lo":812,"hi":947,"mid":880},"liga3":{"lo":633,"hi":739,"mid":686}}, "sprint": {"pl":{"lo":124,"hi":187,"mid":156},"liga3":{"lo":81,"hi":122,"mid":102}}, "acc_dec": {"pl":{"lo":208,"hi":324,"mid":266},"liga3":{"lo":177,"hi":275,"mid":226}}}, "LAT": {"label": "Lateral", "distancia": {"pl":{"lo":9284,"hi":10750,"mid":10017},"liga3":{"lo":8541,"hi":9890,"mid":9216}}, "hsr": {"pl":{"lo":1218,"hi":1488,"mid":1353},"liga3":{"lo":950,"hi":1161,"mid":1056}}, "sprint": {"pl":{"lo":311,"hi":467,"mid":389},"liga3":{"lo":202,"hi":304,"mid":253}}, "acc_dec": {"pl":{"lo":162,"hi":254,"mid":208},"liga3":{"lo":138,"hi":216,"mid":177}}}, "MC": {"label": "Médio Centro", "distancia": {"pl":{"lo":10261,"hi":11239,"mid":10750},"liga3":{"lo":9440,"hi":10340,"mid":9890}}, "hsr": {"pl":{"lo":947,"hi":1218,"mid":1082},"liga3":{"lo":739,"hi":950,"mid":844}}, "sprint": {"pl":{"lo":218,"hi":311,"mid":264},"liga3":{"lo":142,"hi":202,"mid":172}}, "acc_dec": {"pl":{"lo":162,"hi":254,"mid":208},"liga3":{"lo":138,"hi":216,"mid":177}}}, "EXT": {"label": "Extremo", "distancia": {"pl":{"lo":9773,"hi":10750,"mid":10262},"liga3":{"lo":8991,"hi":9890,"mid":9440}}, "hsr": {"pl":{"lo":1218,"hi":1488,"mid":1353},"liga3":{"lo":950,"hi":1161,"mid":1056}}, "sprint": {"pl":{"lo":342,"hi":467,"mid":404},"liga3":{"lo":222,"hi":304,"mid":263}}, "acc_dec": {"pl":{"lo":139,"hi":231,"mid":185},"liga3":{"lo":118,"hi":196,"mid":157}}}, "AC": {"label": "Avançado", "distancia": {"pl":{"lo":9284,"hi":10555,"mid":9920},"liga3":{"lo":8541,"hi":9711,"mid":9126}}, "hsr": {"pl":{"lo":812,"hi":1015,"mid":914},"liga3":{"lo":633,"hi":792,"mid":712}}, "sprint": {"pl":{"lo":233,"hi":342,"mid":288},"liga3":{"lo":151,"hi":222,"mid":186}}, "acc_dec": {"pl":{"lo":139,"hi":231,"mid":185},"liga3":{"lo":118,"hi":196,"mid":157}}}};
+
+function pctPill(pct){
+  if(pct==null) return '—';
+  const color = pct<50 ? 'var(--red)' : (pct<75 ? 'var(--yellow)' : 'var(--green)');
+  return `<span style="color:${color};font-weight:600">${pct}%</span>`;
+}
+async function renderBenchmarkTables(){
+  const labels = {distancia:'Distância (m)', hsr:'HSR (m)', sprint:'Sprint (m)', acc_dec:'Acc/Dec (nº, 2 m/s²)'};
+  const body = document.querySelector('#benchTable tbody');
+  body.innerHTML = '';
+
+  // tenta calcular a média real do SC Vianense em jogo, a partir dos dados já carregados
+  let realGame = null;
+  try{
+    const gps = await getSeries('series_gps');
+    const sessions = await getSeries('series_sessions');
+    const roadmapGameDates = ROADMAP.filter(r=>classifyDayLabel(r.label)==='JOGO').map(r=>r.data);
+    const manualGameDates = Object.keys(sessions).filter(d=>sessions[d].tipo==='Jogo');
+    const gameDates = [...new Set([...roadmapGameDates, ...manualGameDates])];
+    if(gameDates.length){
+      realGame = {distancia:[], hsr:[], sprint:[], acc_dec:[]};
+      for(const date of gameDates){
+        for(const player in gps){
+          if(gps[player][date]){
+            for(const vkey of ['distancia','hsr','sprint','acc_dec']) realGame[vkey].push(gps[player][date][vkey]);
+          }
+        }
+      }
+      for(const vkey in realGame){
+        const arr = realGame[vkey];
+        realGame[vkey] = arr.length ? Math.round((arr.reduce((a,b)=>a+b,0)/arr.length)*10)/10 : null;
+      }
+    }
+  }catch(e){ console.error(e); }
+
+  for(const key of ['distancia','hsr','sprint','acc_dec']){
+    const b = BENCHMARK[key];
+    const realCell = realGame && realGame[key]!=null ? realGame[key] : '—';
+    let pctPL = null, pctL3 = null;
+    if(realGame && realGame[key]!=null){
+      pctPL = Math.round(100*realGame[key]/b.pl.mid);
+      pctL3 = Math.round(100*realGame[key]/b.liga3.mid);
+    }
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${labels[key]}</td><td>${b.pl.lo}–${b.pl.hi} <span style="color:var(--muted)">(méd. ${b.pl.mid})</span></td><td>${b.liga3.lo}–${b.liga3.hi} <span style="color:var(--muted)">(méd. ${b.liga3.mid})</span></td><td>${realCell}</td><td>${pctPill(pctPL)}</td><td>${pctPill(pctL3)}</td>`;
+    body.appendChild(tr);
+  }
+  if(!realGame){
+    document.getElementById('benchTable').insertAdjacentHTML('afterend', '<div class="note" id="noRealBenchNote">Ainda sem dias de jogo detetados nos teus dados para calcular a coluna "SC Vianense real" — carrega o calendário e o GPS dos jogos.</div>');
+  } else {
+    const old = document.getElementById('noRealBenchNote'); if(old) old.remove();
+  }
+
+  // média real do SC Vianense por posição, em dias de jogo, a partir da posição capturada no upload de GPS
+  let realByPos = null;
+  try{
+    const positions = await getSeries('series_positions');
+    if(Object.keys(positions).length){
+      const gps2 = await getSeries('series_gps');
+      const sessions2 = await getSeries('series_sessions');
+      const roadmapGameDates2 = ROADMAP.filter(r=>classifyDayLabel(r.label)==='JOGO').map(r=>r.data);
+      const manualGameDates2 = Object.keys(sessions2).filter(d=>sessions2[d].tipo==='Jogo');
+      const gameDates2 = [...new Set([...roadmapGameDates2, ...manualGameDates2])];
+      realByPos = {};
+      for(const pos of ['DC','LAT','MC','EXT','AC']) realByPos[pos] = {distancia:[],hsr:[],sprint:[],acc_dec:[]};
+      for(const date of gameDates2){
+        for(const player in gps2){
+          const pos = positions[player];
+          if(!pos || !realByPos[pos] || !gps2[player][date]) continue;
+          for(const vkey of ['distancia','hsr','sprint','acc_dec']) realByPos[pos][vkey].push(gps2[player][date][vkey]);
+        }
+      }
+      for(const pos in realByPos){
+        for(const vkey in realByPos[pos]){
+          const arr = realByPos[pos][vkey];
+          realByPos[pos][vkey] = arr.length ? Math.round((arr.reduce((a,b)=>a+b,0)/arr.length)*10)/10 : null;
+        }
+      }
+    }
+  }catch(e){ console.error(e); }
+
+  const posLabels = {distancia:'Distância (m)', hsr:'HSR (m)', sprint:'Sprint (m)', acc_dec:'Acc/Dec (nº)'};
+  const posBody = document.querySelector('#posBenchTable tbody');
+  posBody.innerHTML = '';
+  for(const pos of ['DC','LAT','MC','EXT','AC']){
+    const row = POS_BENCH[pos];
+    let first = true;
+    for(const vkey of ['distancia','hsr','sprint','acc_dec']){
+      const r = row[vkey];
+      const real = realByPos && realByPos[pos] && realByPos[pos][vkey]!=null ? realByPos[pos][vkey] : null;
+      const realCell = real!=null ? real : '—';
+      const pctPL = real!=null ? Math.round(100*real/r.pl.mid) : null;
+      const pctL3 = real!=null ? Math.round(100*real/r.liga3.mid) : null;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${first ? row.label : ''}</td><td>${posLabels[vkey]}</td><td>${r.pl.lo}–${r.pl.hi} (méd. ${r.pl.mid})</td><td>${r.liga3.lo}–${r.liga3.hi} (méd. ${r.liga3.mid})</td><td>${realCell}</td><td>${pctPill(pctPL)}</td><td>${pctPill(pctL3)}</td>`;
+      posBody.appendChild(tr);
+      first = false;
+    }
+  }
+  if(!realByPos){
+    document.getElementById('posBenchTable').insertAdjacentHTML('afterend', '<div class="note" id="noPosRealNote">Ainda sem posições capturadas — volta a carregar o ficheiro de GPS (precisa de ter a coluna "Posição" ou "Position") para esta coluna aparecer.</div>');
+  } else {
+    const old = document.getElementById('noPosRealNote'); if(old) old.remove();
+  }
+}
+
+function renderRoadmapTable(){
+  const body = document.querySelector('#roadmapTable tbody');
+  body.innerHTML = '';
+  const today = todayStr();
+  let cycleSum = {distancia_jogo:0,hsr_jogo:0,sprint_jogo:0,acc_dec_jogo:0,
+                  distancia:0,hsr:0,sprint:0,acc_dec:0, nDias:0};
+  const flushCycleRow = () => {
+    if(cycleSum.nDias===0) return;
+    const tr = document.createElement('tr');
+    tr.style.background = 'rgba(63,174,106,0.06)';
+    tr.style.fontWeight = '600';
+    const cell = (vkey) => `<td colspan="3" style="text-align:center">Σ jogo: ${cycleSum[vkey+'_jogo']}% · Σ crónica: ${cycleSum[vkey]}%</td>`;
+    tr.innerHTML = `<td colspan="3" style="color:var(--green)">Total do ciclo (${cycleSum.nDias} dias de treino)</td>${cell('distancia')}${cell('hsr')}${cell('sprint')}${cell('acc_dec')}`;
+    body.appendChild(tr);
+    cycleSum = {distancia_jogo:0,hsr_jogo:0,sprint_jogo:0,acc_dec_jogo:0,distancia:0,hsr:0,sprint:0,acc_dec:0,nDias:0};
+  };
+  ROADMAP.forEach((w,idx)=>{
+    ensureJogoFields(w);
+    const tr = document.createElement('tr');
+    if(w.data===today) tr.style.background = 'rgba(63,174,106,0.08)';
+    const key = classifyDayLabel(w.label);
+    const isGame = key==='JOGO';
+    const isFolga = key==='FOLGA';
+    let cells;
+    if(isGame){
+      tr.style.background = 'rgba(91,155,213,0.10)';
+      cells = `<td colspan="12" style="color:var(--blue)">Dia de jogo — é a própria referência (100% do jogo). Não editável.</td>`;
+    } else if(isFolga){
+      cells = `<td colspan="12" style="color:var(--muted)">Folga — sempre 0%, não editável.</td>`;
+    } else {
+      const lit = LIT_PCT_JOGO[key] || {};
+      const group = (vkey) => {
+        const litVal = lit[vkey+'_pct'] ?? '—';
+        cycleSum[vkey+'_jogo'] += w[vkey+'_pct_jogo']||0;
+        cycleSum[vkey] += w[vkey+'_pct']||0;
+        return `<td style="color:var(--muted)">${litVal}%</td>
+          <td><input type="number" value="${w[vkey+'_pct_jogo']}" style="width:60px;margin:0;padding:4px 6px;font-size:12px;" onchange="editRoadmapDayJogo(${idx},'${vkey}',this.value)"></td>
+          <td style="color:var(--green)">${w[vkey+'_pct']}%</td>`;
+      };
+      cells = group('distancia') + group('hsr') + group('sprint') + group('acc_dec');
+      cycleSum.nDias++;
+    }
+    tr.innerHTML = `<td>${w.data}${w.data===today?' (hoje)':''}</td><td>${w.md}</td><td>${w.label}</td>${cells}`;
+    body.appendChild(tr);
+    // fecha o ciclo assim que encontra folga ou jogo (fim natural do microciclo)
+    if(isFolga || isGame) flushCycleRow();
+  });
+  flushCycleRow(); // apanha um ciclo final ainda em curso, sem folga/jogo a fechar
+}
+
+async function editRoadmapDayJogo(idx, vkey, value){
+  const val = Number(value);
+  if(isNaN(val)) return;
+  ROADMAP[idx][vkey+'_pct_jogo'] = val;
+  recomputeChronicFromJogo(ROADMAP[idx]);
+  await setSeries('series_roadmap', {roadmap: ROADMAP});
+  setStatus('manualProfileStatus', true, `${ROADMAP[idx].data}: ${vkey} ajustado para ${val}% do jogo → equivale a ${ROADMAP[idx][vkey+'_pct']}% da carga crónica (só este dia).`);
+  renderRoadmapTable();
+}
+
+async function editRoadmapDay(idx, vkey, value){
+  const val = Number(value);
+  if(isNaN(val)) return;
+  ROADMAP[idx][vkey+'_pct'] = val;
+  await setSeries('series_roadmap', {roadmap: ROADMAP});
+  setStatus('manualProfileStatus', true, `${ROADMAP[idx].data} atualizado: ${vkey} = ${val}% (só este dia, não afeta o resto do tipo "${ROADMAP[idx].label}").`);
+}
+
+async function loadTecnico(){
+  const today = await getRefDate();
+  const metrics = await computeAllMetrics(today);
+  const gps = await getSeries('series_gps');
+  const positions = await getSeries('series_positions');
+  const body = document.querySelector('#techTable tbody');
+  body.innerHTML = '';
+  const posOrder = {'DC':0,'LAT':1,'MC':2,'EXT':3,'AC':4};
+  const posFullName = {'DC':'Defesa Central','LAT':'Lateral','MC':'Médio Centro','EXT':'Extremo','AC':'Avançado'};
+  const sortedPlayers = [...CANONICAL].sort((a,b)=>{
+    const pa = posOrder[positions[a]] ?? 99, pb = posOrder[positions[b]] ?? 99;
+    return pa-pb || a.localeCompare(b);
+  });
+  let lastPos = null;
+  for(const player of sortedPlayers){
+    const m = metrics[player];
+    if(!m || !m.multimetric) continue;
+    const pos = positions[player] || null;
+    if(pos!==lastPos){
+      const groupRow = document.createElement('tr');
+      const groupCell = document.createElement('td');
+      groupCell.colSpan = 15;
+      groupCell.style.background = 'var(--panel2)';
+      groupCell.style.color = 'var(--accent)';
+      groupCell.style.fontWeight = '600';
+      groupCell.style.fontSize = '11px';
+      groupCell.style.textTransform = 'uppercase';
+      groupCell.style.letterSpacing = '.5px';
+      groupCell.textContent = pos ? `${posFullName[pos]} (${pos})` : 'Sem posição capturada';
+      groupRow.appendChild(groupCell);
+      body.appendChild(groupRow);
+      lastPos = pos;
+    }
+    const mm = m.multimetric;
+    const cell = (vkey, field) => mm[vkey] ? Math.round(mm[vkey][field]*10)/10 : '—';
+    const combined = m.combined ? `${m.combined.ratio} (${m.combined.source})` : '—';
+    const tr = document.createElement('tr');
+    tr.style.cursor = 'pointer';
+    tr.innerHTML = `<td>${player} <span style="color:var(--muted);font-size:10px;">(clicar p/ detalhe)</span></td><td>${pos||'—'}</td><td>${combined}</td>
+      <td>${cell('distancia','acute_avg')}</td><td>${cell('distancia','chronic_avg')}</td><td>${cell('distancia','ratio')}</td>
+      <td>${cell('hsr','acute_avg')}</td><td>${cell('hsr','chronic_avg')}</td><td>${cell('hsr','ratio')}</td>
+      <td>${cell('sprint','acute_avg')}</td><td>${cell('sprint','chronic_avg')}</td><td>${cell('sprint','ratio')}</td>
+      <td>${cell('acc_dec','acute_avg')}</td><td>${cell('acc_dec','chronic_avg')}</td><td>${cell('acc_dec','ratio')}</td>`;
+    const detailRow = document.createElement('tr');
+    const detailCell = document.createElement('td');
+    detailCell.colSpan = 15;
+    detailCell.style.display = 'none';
+    detailCell.style.background = 'var(--panel2)';
+    if(gps[player]){
+      const dates = Object.keys(gps[player]).sort().reverse().slice(0,28);
+      let rows = '<table style="width:100%;margin:8px 0;"><thead><tr><th>Data</th><th>Distância</th><th>HSR</th><th>Sprint</th><th>Acc/Dec</th><th>Duração (min)</th></tr></thead><tbody>';
+      for(const d of dates){
+        const v = gps[player][d];
+        rows += `<tr><td>${d}</td><td>${Math.round(v.distancia)}</td><td>${Math.round(v.hsr)}</td><td>${Math.round(v.sprint)}</td><td>${Math.round(v.acc_dec)}</td><td>${v.duracao?Math.round(v.duracao):'—'}</td></tr>`;
+      }
+      rows += '</tbody></table>';
+      detailCell.innerHTML = rows;
+    } else {
+      detailCell.innerHTML = '<div style="padding:8px;color:var(--muted);">Sem registos de GPS.</div>';
+    }
+    detailRow.appendChild(detailCell);
+    tr.addEventListener('click', ()=>{
+      detailCell.style.display = detailCell.style.display==='none' ? 'table-cell' : 'none';
+    });
+    body.appendChild(tr);
+    body.appendChild(detailRow);
+  }
+}
+
+function populateDayPicker(){
+  const picker = document.getElementById('dayPicker');
+  picker.innerHTML = '';
+  const today = todayStr();
+  ROADMAP.forEach((d,i)=>{
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = `${d.data} — ${d.md} — ${d.label}`;
+    if(d.data===addDays(today,1)) opt.selected = true;
+    picker.appendChild(opt);
+  });
+}
+
+function isProtectedDay(day){
+  const l = day.label.toLowerCase();
+  return l.includes('folga') || l.includes('jornada') || l.includes('jogo') || l.includes('ativa');
+}
+
+// Finds the start of the current microcycle: the day right after the most recent
+// protected day (Folga/Jornada) at or before targetDate.
+function findCycleStart(targetDate){
+  const idx = ROADMAP.findIndex(r=>r.data===targetDate);
+  if(idx<0) return targetDate;
+  for(let i=idx-1;i>=0;i--){
+    if(isProtectedDay(ROADMAP[i])) return ROADMAP[i+1].data;
+  }
+  return ROADMAP[0].data;
+}
+// Finds the end of the current microcycle: the last adjustable day before the next
+// protected day (Folga/Jornada) at or after targetDate (inclusive of targetDate itself if adjustable).
+function findCycleAdjustableDays(targetDate){
+  const idx = ROADMAP.findIndex(r=>r.data===targetDate);
+  if(idx<0) return [];
+  const days = [];
+  for(let i=idx;i<ROADMAP.length;i++){
+    if(isProtectedDay(ROADMAP[i])) break;
+    days.push(ROADMAP[i].data);
+  }
+  return days;
+}
+
+async function loadPlaneamento(){
+  const picker = document.getElementById('dayPicker');
+  const idx = Number(picker.value);
+  const day = ROADMAP[idx];
+  const infoEl = document.getElementById('planInfo');
+  const tbody = document.querySelector('#planTable tbody');
+  tbody.innerHTML = '';
+  if(!day) return;
+  const today = await getRefDate();
+  const protectedDay = isProtectedDay(day);
+  const cycleStart = findCycleStart(day.data);
+  const remainingDays = protectedDay ? [] : findCycleAdjustableDays(day.data);
+  infoEl.innerHTML = `${day.data} é <b>${day.md}</b> — ${day.label}. Alvos a partir da carga crónica até hoje (${today}).` +
+    (protectedDay
+      ? ` <b style="color:var(--blue)">Dia protegido</b> (folga, ativação pré-jogo ou jogo) — nunca ajustado automaticamente.`
+      : ` Ciclo atual desde <b>${cycleStart}</b>. O desvio acumulado desde aí é distribuído pelos ${remainingDays.length} dia(s) ajustável(eis) que restam até à próxima folga/jogo.`);
+  try{
+    const gps = await getSeries('series_gps');
+    const metrics = await computeAllMetrics(today);
+    const cycleDates = ROADMAP.filter(r => r.data>=cycleStart && r.data<day.data && !isProtectedDay(r));
+
+    function devPill(pctDev){
+      if(pctDev==null) return protectedDay ? `<span style="color:var(--blue)">— (protegido)</span>` : '—';
+      if(Math.abs(pctDev)<5) return `<span style="color:var(--green)">≈0%</span>`;
+      const color = pctDev>0 ? 'var(--yellow)' : 'var(--muted)';
+      const sign = pctDev>0 ? '-' : '+';
+      const arrow = pctDev>0 ? '↓' : '↑';
+      return `<span style="color:${color}">${arrow} ${sign}${Math.abs(pctDev)}%</span>`;
+    }
+
+    for(const player of CANONICAL){
+      const m = metrics[player];
+      if(!m || !m.multimetric) continue;
+
+      function calc(vkey){
+        const v = m.multimetric[vkey];
+        if(!v) return {target:'—', rawTarget:null, devPct:null, wasAdjusted:false};
+        const rawTarget = v.chronic_avg * day[vkey+'_pct'] / 100;
+        let targetAbs = rawTarget;
+        let devPct = null, wasAdjusted = false;
+        if(!protectedDay && gps[player]){
+          let accDelta = 0, countedDays = 0, expectedTotal = 0;
+          for(const cd of cycleDates){
+            const actual = gps[player][cd.data] ? gps[player][cd.data][vkey] : null;
+            const expected = v.chronic_avg * cd[vkey+'_pct'] / 100;
+            expectedTotal += expected;
+            if(actual==null) continue;
+            accDelta += (expected - actual); // positivo = fez menos que o planeado (défice)
+            countedDays++;
+          }
+          if(countedDays>0 && expectedTotal>0){
+            devPct = Math.round(100*accDelta/expectedTotal);
+          }
+          if(countedDays>0 && remainingDays.length>0){
+            const perDayComp = accDelta / remainingDays.length;
+            const isPeak = day.label.includes('++');
+            const maxRel = isPeak ? 0.15 : 0.35;
+            const cap = rawTarget * maxRel;
+            const clampedComp = Math.max(-cap, Math.min(cap, perDayComp));
+            targetAbs = targetAbs + clampedComp;
+            wasAdjusted = Math.abs(clampedComp) > 0.02*Math.abs(rawTarget || 1);
+          }
+        }
+        return {target: Math.round(targetAbs), rawTarget: Math.round(rawTarget), devPct, wasAdjusted};
+      }
+
+      const cD = calc('distancia'), cH = calc('hsr'), cS = calc('sprint'), cA = calc('acc_dec');
+      const tr = document.createElement('tr');
+      const rawCell = (c) => c.rawTarget!=null ? c.rawTarget : c.target;
+      const adjCell = (c) => c.wasAdjusted
+        ? `<span style="color:#f5f7f5;font-weight:600;">${c.target}</span>`
+        : (protectedDay ? `<span style="color:var(--blue)">protegido</span>` : `<span style="color:var(--muted)">= alvo</span>`);
+      tr.innerHTML = `<td>${player}</td>
+        <td>${rawCell(cD)}</td><td>${adjCell(cD)}</td><td>${devPill(cD.devPct)}</td>
+        <td>${rawCell(cH)}</td><td>${adjCell(cH)}</td><td>${devPill(cH.devPct)}</td>
+        <td>${rawCell(cS)}</td><td>${adjCell(cS)}</td><td>${devPill(cS.devPct)}</td>
+        <td>${rawCell(cA)}</td><td>${adjCell(cA)}</td><td>${devPill(cA.devPct)}</td>`;
+      tbody.appendChild(tr);
+    }
+  }catch(e){
+    infoEl.innerHTML = `<span style="color:var(--red)">Erro: ${e.message}</span>`;
+  }
+}
+
+const DAY_PROFILES = {
+  FOLGA:  {distancia_pct:0,   hsr_pct:0,   sprint_pct:0,   acc_dec_pct:0},
+  ATIV:   {distancia_pct:45,  hsr_pct:30,  sprint_pct:25,  acc_dec_pct:55}, // MD-1: taper, o mais baixo antes do jogo (literatura: queda visível de Acc/Dec no MD-1)
+  TENSAO: {distancia_pct:85,  hsr_pct:70,  sprint_pct:50,  acc_dec_pct:165}, // Acc/Dec sempre o mais alto (dia de duelos/contacto)
+  DURM:   {distancia_pct:130, hsr_pct:100, sprint_pct:80,  acc_dec_pct:142}, // Acc/Dec convertido de %jogo real da literatura (Anderson et al.: MD-4=71.5% do jogo x 1.99 = 142% da crónica)
+  DURPP:  {distancia_pct:169, hsr_pct:130, sprint_pct:104, acc_dec_pct:143}, // = Duração- × 1.30
+  VELOC:  {distancia_pct:100, hsr_pct:95,  sprint_pct:90,  acc_dec_pct:116}, // MD-2: tapering em volume, mas Acc/Dec convertido de %jogo real (58.5% x 1.99 = 116%)
+  JOGO:   {distancia_pct:215, hsr_pct:252, sprint_pct:222, acc_dec_pct:199},
+};
+
+// Rácio real jogo/crónica da equipa (calibrado com os 8 jogos-treino reais do SC Vianense) --
+// usado para converter %jogo (referência de literatura, mais intuitiva) em %crónica (a base
+// real usada para calcular os alvos de cada jogador).
+const MATCH_CHRONIC_RATIO = {distancia:2.15, hsr:2.52, sprint:2.22, acc_dec:1.99};
+
+// Referência de %jogo por tipo de dia (obtida da literatura onde havia números concretos —
+// Anderson et al. para Acc/Dec — e por engenharia reversa a partir dos %crónica acima para as
+// restantes variáveis, mantendo a mesma forma/ordem relativa da semana). É só o ponto de partida:
+// o valor "ativo" de cada dia fica guardado por dia em ROADMAP e pode ser ajustado manualmente.
+const LIT_PCT_JOGO = {
+  FOLGA:  {distancia_pct:0,  hsr_pct:0,  sprint_pct:0,  acc_dec_pct:0},
+  ATIV:   {distancia_pct:21, hsr_pct:12, sprint_pct:11, acc_dec_pct:28},
+  TENSAO: {distancia_pct:40, hsr_pct:28, sprint_pct:23, acc_dec_pct:83},
+  DURM:   {distancia_pct:60, hsr_pct:40, sprint_pct:36, acc_dec_pct:71}, // Acc/Dec bate quase certo com Anderson et al. (71.5%)
+  DURPP:  {distancia_pct:79, hsr_pct:52, sprint_pct:47, acc_dec_pct:72},
+  VELOC:  {distancia_pct:47, hsr_pct:38, sprint_pct:41, acc_dec_pct:58}, // Acc/Dec bate certo com Anderson et al. (58.5%)
+  JOGO:   {distancia_pct:100,hsr_pct:100,sprint_pct:100,acc_dec_pct:100},
+};
+function median(arr){
+  const s = [...arr].sort((a,b)=>a-b);
+  const mid = Math.floor(s.length/2);
+  return s.length%2 ? s[mid] : (s[mid-1]+s[mid])/2;
+}
+
+const DEFAULT_DAY_PROFILES = {
+  FOLGA:  {distancia_pct:0,   hsr_pct:0,   sprint_pct:0,   acc_dec_pct:0},
+  ATIV:   {distancia_pct:45,  hsr_pct:30,  sprint_pct:25,  acc_dec_pct:55},
+  TENSAO: {distancia_pct:85,  hsr_pct:70,  sprint_pct:50,  acc_dec_pct:165},
+  DURM:   {distancia_pct:130, hsr_pct:100, sprint_pct:80,  acc_dec_pct:142},
+  DURPP:  {distancia_pct:169, hsr_pct:130, sprint_pct:104, acc_dec_pct:143},
+  VELOC:  {distancia_pct:100, hsr_pct:95,  sprint_pct:90,  acc_dec_pct:116},
+  JOGO:   {distancia_pct:215, hsr_pct:252, sprint_pct:222, acc_dec_pct:199},
+};
+const PROFILE_LABELS = {TENSAO:'Tensão/Duração-', DURM:'Duração-', DURPP:'Duração++', VELOC:'Veloc./Duração-', ATIV:'Ativação', FOLGA:'Folga', JOGO:'Jornada (jogo)'};
+
+async function resetDayProfiles(){
+  if(!confirm('Isto apaga TUDO relacionado com o calendário e as percentagens guardadas (calibração e calendário personalizado) e reconstrói do zero com os valores por defeito corretos. Se tinhas um calendário carregado por ficheiro, tens de o carregar outra vez depois. Continuar?')) return;
+  try{
+    // 1. repõe o objeto DAY_PROFILES em memória, célula a célula (garante que não sobra nada antigo)
+    for(const key in DEFAULT_DAY_PROFILES){
+      DAY_PROFILES[key] = {...DEFAULT_DAY_PROFILES[key]};
+    }
+    // 2. apaga tudo o que estava guardado (calibração + calendário personalizado)
+    await setSeries('series_day_profiles', {});
+    await setSeries('series_roadmap', {});
+    // 3. reconstrói o ROADMAP em memória a partir do calendário base fixo (BASE_ROADMAP), já com os
+    //    novos valores por defeito -- não reaproveita o array antigo que possa estar corrompido
+    ROADMAP = BASE_ROADMAP.map(d => {
+      const key = classifyDayLabel(d.label);
+      const profile = DAY_PROFILES[key] || DAY_PROFILES.DURM;
+      return {...d, ...profile};
+    });
+    const check = ['TENSAO','DURM','DURPP','VELOC','ATIV'].map(k=>`${k}: ${DAY_PROFILES[k].distancia_pct}/${DAY_PROFILES[k].hsr_pct}/${DAY_PROFILES[k].sprint_pct}/${DAY_PROFILES[k].acc_dec_pct}`).join(' · ');
+    setStatus('calibrateStatus', true, `Tudo reconstruído do zero. Valores atuais (distância/HSR/sprint/acc-dec) — ${check}`);
+    renderRoadmapTable();
+    populateDayPicker();
+  }catch(e){
+    setStatus('calibrateStatus', false, 'Erro: ' + e.message);
+  }
+}
+
+async function calibrateDayProfiles(){
+  try{
+    setStatus('calibrateStatus', true, 'A calcular...');
+    const gps = await getSeries('series_gps');
+    const collected = {TENSAO:{distancia:[],hsr:[],sprint:[],acc_dec:[]}, DURM:{distancia:[],hsr:[],sprint:[],acc_dec:[]},
+      DURPP:{distancia:[],hsr:[],sprint:[],acc_dec:[]}, VELOC:{distancia:[],hsr:[],sprint:[],acc_dec:[]}, ATIV:{distancia:[],hsr:[],sprint:[],acc_dec:[]}};
+    const distinctDates = {TENSAO:new Set(), DURM:new Set(), DURPP:new Set(), VELOC:new Set(), ATIV:new Set()};
+    let datesUsed = 0;
+    for(const day of ROADMAP){
+      const key = classifyDayLabel(day.label);
+      if(!collected[key]) continue; // ignora FOLGA e JOGO (já calibrados à parte / sempre 0)
+      const metrics = await computeAllMetrics(day.data);
+      let anyPlayerCounted = false;
+      for(const player in metrics){
+        const m = metrics[player];
+        if(!m.multimetric || !gps[player] || !gps[player][day.data]) continue;
+        for(const vkey of ['distancia','hsr','sprint','acc_dec']){
+          const chronic = m.multimetric[vkey] ? m.multimetric[vkey].chronic_avg : null;
+          const actual = gps[player][day.data][vkey];
+          if(chronic && chronic>0 && actual!=null){
+            collected[key][vkey].push(actual/chronic);
+            anyPlayerCounted = true;
+          }
+        }
+      }
+      if(anyPlayerCounted){ datesUsed++; distinctDates[key].add(day.data); }
+    }
+    const MIN_DISTINCT_DATES = 8; // exige pelo menos 8 dias DIFERENTES desse tipo, não só muitos jogadores em poucos dias
+    let summary = [], details = [];
+    for(const key in collected){
+      const before = {...DAY_PROFILES[key]};
+      let changed = false;
+      const nDates = distinctDates[key].size;
+      const rowDetails = [`dias distintos=${nDates}`];
+      for(const vkey of ['distancia','hsr','sprint','acc_dec']){
+        const arr = collected[key][vkey];
+        rowDetails.push(`${vkey}: n=${arr.length}`);
+        if(nDates>=MIN_DISTINCT_DATES){
+          // mediana em vez de média -- resistente a 1-2 valores absurdos (ex: dados ainda corrompidos)
+          const medRatio = median(arr);
+          let newPct = Math.round(medRatio*100);
+          // limite de sanidade: não deixa a calibração fugir para valores implausíveis de uma só vez
+          const oldPct = DAY_PROFILES[key][vkey+'_pct'];
+          newPct = Math.max(Math.round(oldPct*0.4), Math.min(Math.round(oldPct*2.5), newPct));
+          DAY_PROFILES[key][vkey+'_pct'] = newPct;
+          changed = true;
+        }
+      }
+      details.push(`${key} (${rowDetails.join(', ')})`);
+      if(changed){
+        summary.push(`${key}: distância ${before.distancia_pct}%→${DAY_PROFILES[key].distancia_pct}%, HSR ${before.hsr_pct}%→${DAY_PROFILES[key].hsr_pct}%, sprint ${before.sprint_pct}%→${DAY_PROFILES[key].sprint_pct}%, acc/dec ${before.acc_dec_pct}%→${DAY_PROFILES[key].acc_dec_pct}%`);
+      }
+    }
+    // reaplica os novos perfis a cada entrada do ROADMAP (mantendo FOLGA/JOGO como estão)
+    for(const day of ROADMAP){
+      const key = classifyDayLabel(day.label);
+      if(collected[key]){
+        day.distancia_pct = DAY_PROFILES[key].distancia_pct;
+        day.hsr_pct = DAY_PROFILES[key].hsr_pct;
+        day.sprint_pct = DAY_PROFILES[key].sprint_pct;
+        day.acc_dec_pct = DAY_PROFILES[key].acc_dec_pct;
+      }
+    }
+    await setSeries('series_roadmap', {roadmap: ROADMAP});
+    await setSeries('series_day_profiles', DAY_PROFILES);
+    const sampleInfo = `Amostras por tipo: ${details.join(' · ')} (mínimo exigido: ${MIN_DISTINCT_DATES} dias distintos).`;
+    if(summary.length===0){
+      setStatus('calibrateStatus', false, `Ainda não há dados suficientes para calibrar com confiança — mantidas as estimativas da literatura. ${sampleInfo}`);
+    } else {
+      setStatus('calibrateStatus', true, `Calibrado com ${datesUsed} dias reais (mediana, com limite de variação máxima de 0.4x-2.5x da estimativa original para evitar valores implausíveis). ${sampleInfo}<br>Alterações:<br>${summary.join('<br>')}<br><span style="color:var(--yellow)">Se os números ainda parecerem estranhos, confirma que o histórico de GPS não tem dados antigos corrompidos (usa "Apagar TODO o histórico de GPS" e recarrega os ficheiros, depois calibra outra vez).</span>`);
+    }
+    renderRoadmapTable();
+  }catch(e){
+    setStatus('calibrateStatus', false, 'Erro: ' + e.message);
+  }
+}
+
+// Garante que um dia do ROADMAP tem sempre os campos %jogo (editáveis) preenchidos -- se só
+// existir o %crónica antigo (dados já guardados de antes desta funcionalidade), calcula o %jogo
+// equivalente por engenharia reversa, para nunca perder dados já ajustados manualmente.
+function ensureJogoFields(day){
+  for(const vkey of ['distancia','hsr','sprint','acc_dec']){
+    if(day[vkey+'_pct_jogo']===undefined){
+      const ratio = MATCH_CHRONIC_RATIO[vkey];
+      day[vkey+'_pct_jogo'] = Math.round((day[vkey+'_pct']||0)/ratio);
+    }
+  }
+  return day;
+}
+// Recalcula o %crónica (usado em todo o resto da app para os alvos) a partir do %jogo atual.
+function recomputeChronicFromJogo(day){
+  for(const vkey of ['distancia','hsr','sprint','acc_dec']){
+    const ratio = MATCH_CHRONIC_RATIO[vkey];
+    day[vkey+'_pct'] = Math.round((day[vkey+'_pct_jogo']||0) * ratio);
+  }
+  return day;
+}
+
+function classifyDayLabel(label){
+  const l = norm(label);
+  if(l.includes('folga')) return 'FOLGA';
+  if(l.includes('jornada') || l.includes('jogo') || /\bjp\s*\d/.test(l)) return 'JOGO';
+  if(l.includes('tensão') || l.includes('tensao')) return 'TENSAO';
+  if(l.includes('ativa')) return 'ATIV';
+  if(l.includes('veloc')) return 'VELOC';
+  if(l.includes('++')) return 'DURPP';
+  return 'DURM';
+}
+function excelSerialToDateStr(v){
+  if(v instanceof Date) return v.toISOString().slice(0,10);
+  if(typeof v === 'string'){
+    const parts = v.split(/[\/\-]/);
+    if(parts.length===3){
+      if(parts[0].length===4) return `${parts[0]}-${parts[1].padStart(2,'0')}-${parts[2].padStart(2,'0')}`;
+      return `${parts[2].length===2?'20'+parts[2]:parts[2]}-${parts[0].padStart(2,'0')}-${parts[1].padStart(2,'0')}`;
+    }
+  }
+  return null;
+}
+
+function parseGridCalendar(rows){
+  const isDateRow = (r) => /^\d{2}\/\d{2}$/.test((r[0]||'').toString().trim());
+  const results = [];
+  let year = new Date().getFullYear(), lastMonth = 0;
+  let i = 0;
+  while(i < rows.length){
+    if(isDateRow(rows[i])){
+      const datesRow = rows[i];
+      const line1 = rows[i+1] || [];
+      const line2 = rows[i+2] || [];
+      const tipoRow = rows[i+3] || [];
+      for(let c=0;c<7;c++){
+        const draw = (datesRow[c]||'').toString().trim();
+        if(!/^\d{2}\/\d{2}$/.test(draw)) continue;
+        const [dd,mm] = draw.split('/');
+        const mmI = Number(mm);
+        if(mmI < lastMonth - 6) year++;
+        lastMonth = mmI;
+        const dateStr = `${year}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;
+        const l1 = (line1[c]||'').toString();
+        const l2 = (line2[c]||'').toString();
+        const tp = (tipoRow[c]||'').toString();
+        const isMatch = /jp\s*\d/i.test(l1) || /jp\s*\d/i.test(l2) || /jornada/i.test(l1) || /jornada/i.test(l2);
+        const isFolga = /folga/i.test(l1) || /folga/i.test(l2) || /folga/i.test(tp);
+        let label;
+        if(isMatch) label = (/jp\s*\d/i.test(l1) || /jornada/i.test(l1)) ? l1.trim() : l2.trim();
+        else if(isFolga) label = 'Folga';
+        else if(tp.trim()) label = tp.trim();
+        else if(l1.trim() || l2.trim()) label = (l1.trim()+' '+l2.trim()).trim();
+        else continue;
+        results.push({data: dateStr, label});
+      }
+      i += 4;
+    } else { i++; }
+  }
+  return results;
+}
+
+async function handleRoadmapUpload(){
+  const f = document.getElementById('roadmapFile').files[0];
+  if(!f){ setStatus('roadmapStatus', false, 'Escolhe um ficheiro primeiro.'); return; }
+  try{
+    let rows;
+    if(f.name.endsWith('.csv')){
+      const text = await readTextSmart(f);
+      rows = Papa.parse(text, {skipEmptyLines:false}).data;
+    } else {
+      const buf = await f.arrayBuffer();
+      const wb = XLSX.read(buf, {type:'array', cellDates:true});
+      rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1});
+    }
+    const header0 = (rows[0]||[]).map(h=>norm(h));
+    const isSimpleFormat = header0.some(h=>h.includes('data')) && header0.some(h=>h.includes('tipo'));
+    let parsedDays;
+    if(isSimpleFormat){
+      const dateCol = header0.findIndex(h=>h.includes('data'));
+      const tipoCol = header0.findIndex(h=>h.includes('tipo'));
+      parsedDays = [];
+      for(let i=1;i<rows.length;i++){
+        const r = rows[i];
+        if(!r || !r[dateCol] || !r[tipoCol]) continue;
+        const dateStr = excelSerialToDateStr(r[dateCol]);
+        if(!dateStr) continue;
+        parsedDays.push({data: dateStr, label: r[tipoCol].toString()});
+      }
+    } else {
+      parsedDays = parseGridCalendar(rows);
+      if(parsedDays.length===0){ setStatus('roadmapStatus', false, 'Não reconheci nem o formato "Data/Tipo" nem o formato de grelha semanal neste ficheiro.'); return; }
+    }
+    const newRoadmap = [];
+    let matchCount = 0;
+    for(const pd of parsedDays){
+      const profileKey = classifyDayLabel(pd.label);
+      const isJogo = profileKey==='JOGO';
+      if(isJogo) matchCount++;
+      newRoadmap.push({ data: pd.data, md: isJogo?'MD':'', label: pd.label, ...DAY_PROFILES[profileKey] });
+    }
+    newRoadmap.sort((a,b)=> a.data.localeCompare(b.data));
+    ROADMAP = newRoadmap;
+    await setSeries('series_roadmap', {roadmap: ROADMAP});
+    setStatus('roadmapStatus', true, `Calendário atualizado (formato ${isSimpleFormat?'Data/Tipo':'grelha semanal'} detetado): ${newRoadmap.length} dias, ${matchCount} jornadas/jogos identificados.`);
+  }catch(e){ setStatus('roadmapStatus', false, 'Erro: ' + e.message); }
+}
+
+async function loadSavedRoadmap(){
+  try{
+    const saved = await getSeries('series_roadmap');
+    if(saved && saved.roadmap && saved.roadmap.length) ROADMAP = saved.roadmap;
+    const savedProfiles = await getSeries('series_day_profiles');
+    if(savedProfiles && Object.keys(savedProfiles).length){
+      for(const key in savedProfiles) if(DAY_PROFILES[key]) Object.assign(DAY_PROFILES[key], savedProfiles[key]);
+    }
+    // já não sobrepõe cada dia com o perfil do tipo -- isso apagaria ajustes manuais por dia.
+    // ensureJogoFields() trata de preencher %jogo em falta a partir do %crónica já existente,
+    // sem tocar em dias já ajustados.
+    ROADMAP.forEach(ensureJogoFields);
+  }catch(e){}
+}
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+async function handlePdfUpload(){
+  const f = document.getElementById('pdfFile').files[0];
+  if(!f){ setStatus('pdfStatus', false, 'Escolhe um ficheiro primeiro.'); return; }
+  try{
+    const buf = await f.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+    let fullText = '';
+    for(let p=1;p<=pdf.numPages;p++){
+      const page = await pdf.getPage(p);
+      const content = await page.getTextContent();
+      fullText += content.items.map(it=>it.str).join(' ') + '\n';
+    }
+    const matches = [...fullText.matchAll(/(\d+)\s*\(\s*[Tt]otal\s*\)/g)];
+    const totalMin = matches.reduce((sum,m)=>sum+Number(m[1]), 0);
+    document.getElementById('pdfDuracaoDetetada').value = totalMin || '';
+    document.getElementById('pdfTextoExtraido').value = fullText.slice(0, 4000);
+    document.getElementById('pdfPreview').style.display = 'block';
+    setStatus('pdfStatus', true, `Extraído: ${pdf.numPages} página(s), ${matches.length} valores "(total)" encontrados, soma = ${totalMin} min. Confirma abaixo antes de gravar.`);
+  }catch(e){ setStatus('pdfStatus', false, 'Erro ao ler PDF: ' + e.message); }
+}
+
+async function savePdfSession(){
+  const date = document.getElementById('pdfDataInput').value;
+  if(!date){ setStatus('pdfStatus', false, 'Escolhe a data da sessão.'); return; }
+  const duracao = Number(document.getElementById('pdfDuracaoDetetada').value) || null;
+  const notas = document.getElementById('pdfTextoExtraido').value.slice(0, 500);
+  try{
+    const series = await getSeries('series_sessions');
+    series[date] = {tipo:'Treino', duracao, notas: '(extraído de PDF) ' + notas};
+    await setSeries('series_sessions', series);
+    setStatus('pdfStatus', true, `Sessão de ${date} guardada a partir do PDF.`);
+  }catch(e){ setStatus('pdfStatus', false, 'Erro: ' + e.message); }
+}
+
+let chartCountInstance = null, chartSweetSpotInstance = null, chartChronicInstance = null, chartJogosInstance = null, chartJogosHSRInstance = null, chartJogosSprintInstance = null;
+
+const EXPECTED_PATTERN = {
+  TENSAO: 'Volume baixo, Acc/Dec alto (duelos) — MD-5',
+  DURM:   'Volume moderado, a construir — MD-4',
+  DURPP:  'Pico da semana — deve ser o mais alto (MD-3/MD-4)',
+  VELOC:  'Início do tapering — semelhante ou já abaixo do pico, não um novo pico (MD-2)',
+  ATIV:   'O mais baixo de todos os dias de treino — taper final (MD-1)',
+};
+
+async function loadCycleSummary(){
+  const infoEl = document.getElementById('cycleSummaryInfo');
+  const body = document.querySelector('#cycleSummaryTable tbody');
+  body.innerHTML = '';
+  try{
+    const gps = await getSeries('series_gps');
+    const today = await getRefDate();
+    // encontra o ciclo mais recente já TERMINADO: do início do ciclo anterior até ao fim desse ciclo
+    const idxToday = ROADMAP.findIndex(r=>r.data===today);
+    if(idxToday<0){ infoEl.textContent = 'Sem dados suficientes.'; return; }
+    // recua até encontrar um dia protegido (fim do ciclo anterior), depois recua mais um ciclo completo
+    let end = idxToday;
+    while(end>=0 && !isProtectedDay(ROADMAP[end])) end--;
+    if(end<0){ infoEl.textContent = 'Ainda não há um ciclo completo terminado.'; return; }
+    const cycleEndDate = ROADMAP[end].data;
+    const cycleStartDate = findCycleStart(cycleEndDate);
+    const cycleDays = ROADMAP.filter(r => r.data>=cycleStartDate && r.data<=cycleEndDate && !isProtectedDay(r));
+    infoEl.innerHTML = `Ciclo analisado: <b>${cycleStartDate}</b> a <b>${cycleEndDate}</b> (${cycleDays.length} dias de treino).`;
+
+    const sums = {};
+    for(const day of cycleDays){
+      const key = classifyDayLabel(day.label);
+      if(!sums[key]) sums[key] = {distancia:0,hsr:0,sprint:0,acc_dec:0,count:0};
+      for(const player in gps){
+        if(gps[player][day.data]){
+          sums[key].distancia += gps[player][day.data].distancia;
+          sums[key].hsr += gps[player][day.data].hsr;
+          sums[key].sprint += gps[player][day.data].sprint;
+          sums[key].acc_dec += gps[player][day.data].acc_dec;
+          sums[key].count++;
+        }
+      }
+    }
+    for(const key of ['TENSAO','DURM','DURPP','VELOC','ATIV']){
+      const s = sums[key];
+      const tr = document.createElement('tr');
+      if(!s || s.count===0){
+        tr.innerHTML = `<td>${PROFILE_LABELS[key]}</td><td colspan="4" style="color:var(--muted)">Sem dados neste ciclo</td><td>${EXPECTED_PATTERN[key]}</td>`;
+      } else {
+        tr.innerHTML = `<td>${PROFILE_LABELS[key]}</td><td>${Math.round(s.distancia)}</td><td>${Math.round(s.hsr)}</td><td>${Math.round(s.sprint)}</td><td>${Math.round(s.acc_dec)}</td><td>${EXPECTED_PATTERN[key]}</td>`;
+      }
+      body.appendChild(tr);
+    }
+    // verificação simples do padrão: DURPP deve ter a maior distância de todos os tipos de treino presentes
+    const distByKey = {};
+    for(const key in sums) if(sums[key].count>0) distByKey[key] = sums[key].distancia;
+    const maxKey = Object.keys(distByKey).reduce((a,b)=> distByKey[a]>distByKey[b]?a:b, Object.keys(distByKey)[0]);
+    if(maxKey && distByKey['DURPP']!=null){
+      const matches = maxKey==='DURPP';
+      infoEl.innerHTML += `<br>${matches ? '✅' : '⚠️'} O dia com maior distância real neste ciclo foi <b>${PROFILE_LABELS[maxKey]}</b> — ${matches ? 'bate certo com a literatura (Duração++ deve ser o pico).' : 'a literatura esperava que fosse Duração++ (MD-3), vale a pena rever se o plano desse dia está mesmo a ser o mais exigente.'}`;
+    }
+  }catch(e){
+    infoEl.innerHTML = `<span style="color:var(--red)">Erro: ${e.message}</span>`;
+  }
+}
+
+async function loadProgressao(){
+  try{
+    const gps = await getSeries('series_gps');
+    const sessions = await getSeries('series_sessions');
+    const allGpsDates = new Set();
+    Object.values(gps).forEach(pd=>Object.keys(pd).forEach(d=>allGpsDates.add(d)));
+    const sortedDates = [...allGpsDates].sort();
+
+    const ssLabels = [], ssValues = [], countLabels = [], countValues = [], chronicLabels = [], chronicValues = [];
+    for(const date of sortedDates){
+      const metrics = await computeAllMetrics(date);
+      const ratios = [];
+      const chronicVals = [];
+      let inSweetSpot = 0, totalWithData = 0;
+      for(const player in metrics){
+        const m = metrics[player];
+        if(m.combined){
+          ratios.push(m.combined.ratio);
+          totalWithData++;
+          if(m.combined.ratio>=0.8 && m.combined.ratio<=1.3) inSweetSpot++;
+        }
+        if(m.multimetric && m.multimetric.distancia) chronicVals.push(m.multimetric.distancia.chronic_avg);
+      }
+      if(ratios.length){
+        ssLabels.push(date);
+        ssValues.push(Math.round((ratios.reduce((a,b)=>a+b,0)/ratios.length)*100)/100);
+        countLabels.push(date);
+        countValues.push(inSweetSpot);
+      }
+      if(chronicVals.length){
+        chronicLabels.push(date);
+        chronicValues.push(Math.round(chronicVals.reduce((a,b)=>a+b,0)/chronicVals.length));
+      }
+    }
+
+    const ctxC = document.getElementById('chartChronic').getContext('2d');
+    if(chartChronicInstance) chartChronicInstance.destroy();
+    chartChronicInstance = new Chart(ctxC, {
+      type:'line',
+      data:{ labels: chronicLabels, datasets:[
+        {label:'Premier League (~3980 m/dia, referência)', data: chronicLabels.map(()=>3980), borderColor:'rgba(91,155,213,0.6)', borderDash:[6,4], pointRadius:0, fill:false, order:3},
+        {label:'Liga 3 ajustado (~3660 m/dia, estimativa)', data: chronicLabels.map(()=>3660), borderColor:'rgba(217,164,65,0.6)', borderDash:[6,4], pointRadius:0, fill:false, order:2},
+        {label:'Distância crónica média da equipa (m/dia, base 28d)', data: chronicValues, borderColor:'#3fae6a', backgroundColor:'rgba(63,174,106,0.15)', tension:0.2, fill:true, order:1},
+      ]},
+      options:{
+        scales:{
+          y:{ grid:{color:'#22322c'}, ticks:{color:'#8ea69a'} },
+          x:{ grid:{color:'#22322c'}, ticks:{color:'#8ea69a', maxRotation:60, minRotation:60} }
+        },
+        plugins:{ legend:{labels:{color:'#e9efe9'}} }
+      }
+    });
+
+    const ctx0 = document.getElementById('chartCount').getContext('2d');
+    if(chartCountInstance) chartCountInstance.destroy();
+    chartCountInstance = new Chart(ctx0, {
+      type:'line',
+      data:{ labels: countLabels, datasets:[
+        {label:'Jogadores em sweet spot', data: countValues, borderColor:'#5b9bd5', backgroundColor:'rgba(91,155,213,0.1)', tension:0.2, fill:true, stepped:false},
+      ]},
+      options:{
+        scales:{
+          y:{ min:0, grid:{color:'#22322c'}, ticks:{color:'#8ea69a', stepSize:1} },
+          x:{ grid:{color:'#22322c'}, ticks:{color:'#8ea69a', maxRotation:60, minRotation:60} }
+        },
+        plugins:{ legend:{labels:{color:'#e9efe9'}} }
+      }
+    });
+
+    const ctx1 = document.getElementById('chartSweetSpot').getContext('2d');
+    if(chartSweetSpotInstance) chartSweetSpotInstance.destroy();
+    chartSweetSpotInstance = new Chart(ctx1, {
+      type:'line',
+      data:{ labels: ssLabels, datasets:[
+        {label:'Sweet spot — limite superior (1.3)', data: ssLabels.map(()=>1.3), borderColor:'rgba(63,174,106,0.5)', borderDash:[5,5], pointRadius:0, fill:false, order:2},
+        {label:'Sweet spot — limite inferior (0.8)', data: ssLabels.map(()=>0.8), borderColor:'rgba(63,174,106,0.5)', borderDash:[5,5], pointRadius:0, backgroundColor:'rgba(63,174,106,0.12)', fill:'-1', order:2},
+        {label:'ACWR médio da equipa', data: ssValues, borderColor:'#5b9bd5', backgroundColor:'rgba(91,155,213,0.15)', tension:0.2, fill:false, order:1, pointRadius:2},
+      ]},
+      options:{
+        scales:{
+          y:{ min:0, suggestedMax:2, grid:{color:'#22322c'}, ticks:{color:'#8ea69a'} },
+          x:{ grid:{color:'#22322c'}, ticks:{color:'#8ea69a', maxRotation:60, minRotation:60} }
+        },
+        plugins:{ legend:{labels:{color:'#e9efe9'}} }
+      }
+    });
+
+    const roadmapGameDates = ROADMAP.filter(r=>classifyDayLabel(r.label)==='JOGO').map(r=>r.data);
+    const manualGameDates = Object.keys(sessions).filter(d=>sessions[d].tipo==='Jogo');
+    const gameDates = [...new Set([...roadmapGameDates, ...manualGameDates])].sort();
+
+    function buildGameChart(canvasId, vkey, label, color, existingInstance){
+      const gLabels = [], gValues = [];
+      for(const date of gameDates){
+        const vals = [];
+        for(const player in gps){
+          if(gps[player][date]) vals.push(gps[player][date][vkey]);
+        }
+        if(vals.length){
+          gLabels.push(date);
+          gValues.push(Math.round((vals.reduce((a,b)=>a+b,0)/vals.length)*10)/10);
+        }
+      }
+      const ctx = document.getElementById(canvasId).getContext('2d');
+      if(existingInstance) existingInstance.destroy();
+      const instance = new Chart(ctx, {
+        type:'line',
+        data:{ labels: gLabels, datasets:[
+          {label: label, data: gValues, borderColor:color, backgroundColor:color+'26', tension:0.2, fill:true},
+        ]},
+        options:{
+          scales:{
+            y:{ grid:{color:'#22322c'}, ticks:{color:'#8ea69a'} },
+            x:{ grid:{color:'#22322c'}, ticks:{color:'#8ea69a', maxRotation:60, minRotation:60} }
+          },
+          plugins:{ legend:{labels:{color:'#e9efe9'}} }
+        }
+      });
+      return {instance, hasData: gLabels.length>0};
+    }
+
+    const r1 = buildGameChart('chartJogos', 'distancia', 'Distância média da equipa em jogo (m)', '#5b9bd5', chartJogosInstance);
+    chartJogosInstance = r1.instance;
+    const r2 = buildGameChart('chartJogosHSR', 'hsr', 'HSR médio da equipa em jogo (m)', '#d9a441', chartJogosHSRInstance);
+    chartJogosHSRInstance = r2.instance;
+    const r3 = buildGameChart('chartJogosSprint', 'sprint', 'Sprint/VHSR médio da equipa em jogo (m)', '#c85450', chartJogosSprintInstance);
+    chartJogosSprintInstance = r3.instance;
+
+    const oldNote = document.getElementById('noGamesNote'); if(oldNote) oldNote.remove();
+    if(!r1.hasData){
+      document.getElementById('chartJogosSprint').insertAdjacentHTML('afterend', '<div class="note" id="noGamesNote">Ainda não há dias de jogo com GPS carregado para desenhar estes gráficos — carrega o calendário (para identificar os jogos) e o GPS desses dias.</div>');
+    }
+  }catch(e){
+    console.error(e);
+  }
+}
+
+loadSavedRoadmap().then(()=>loadDashboard());
+
+document.getElementById('dayPicker').addEventListener('change', loadPlaneamento);
+
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-'+tab.dataset.tab).classList.add('active');
+    if(tab.dataset.tab==='hoje') loadDashboard();
+    if(tab.dataset.tab==='planeamento'){ populateDayPicker(); loadPlaneamento(); }
+    if(tab.dataset.tab==='equipa'){ renderRoadmapTable(); }
+    if(tab.dataset.tab==='progressao'){ loadProgressao(); loadCycleSummary(); }
+    if(tab.dataset.tab==='benchmark') renderBenchmarkTables();
+    if(tab.dataset.tab==='tecnico') loadTecnico();
+    if(tab.dataset.tab==='history') loadHistory();
+  });
+});
+</script>
+</body>
+</html>
