@@ -180,6 +180,7 @@
 
 <div class="panel" id="panel-benchmark">
   <div class="note"><b>Premier League:</b> dados de estudos científicos recentes sobre a liga (2015-2025), por 90 min, jogador de campo. <b>Liga 3 (ajustado):</b> a Liga 3 portuguesa é um campeonato <b>profissional</b> (desde 2021), apesar de ser a 3ª divisão — por isso o fosso face à Premier League é bem menor do que seria para uma liga amadora. Não existe estudo publicado específico da Liga 3, por isso é uma estimativa minha, aplicando: distância ×0.92, Acc/Dec ×0.85 (variáveis ligadas ao volume/trabalho, onde o fosso entre profissionais é pequeno), HSR ×0.78 e sprint ×0.65 (variáveis mais dependentes de recursos de staff, preparação física e qualidade atlética de topo, onde o fosso continua a existir mesmo entre ligas profissionais). <b>Trata isto como uma referência de trabalho, não um valor validado</b> — calibra com dados reais de adversários da Liga 3 assim que tiveres.</div>
+  <div class="note" style="border-color:rgba(63,174,106,0.4)"><b>"SC Vianense real" conta só jogos oficiais (Jornada X)</b> — amigáveis (JP1, JP2, etc.) não entram neste benchmark, porque não representam bem a intensidade de competição. São identificados automaticamente pelo texto do calendário ("Jornada" = oficial).</div>
   <h2>Geral</h2>
   <table id="benchTable">
     <thead><tr><th>Variável</th><th>Premier League</th><th>Liga 3 (ajustado)</th><th>SC Vianense (real, jogos)</th><th>% do PL</th><th>% da Liga 3</th></tr></thead>
@@ -197,7 +198,7 @@
   <div class="note">Cargas crónicas em bruto (28 dias) por jogador — a base de todos os alvos e rácios calculados nas outras abas.</div>
   <button class="secondary" onclick="loadTecnico()">Atualizar</button>
   <table id="techTable" style="margin-top:12px;">
-    <thead><tr><th>Jogador</th><th>Posição</th><th>Combinado (ratio)</th><th>Dist. 7d</th><th>Dist. 28d</th><th>Dist. ratio</th><th>HSR 7d</th><th>HSR 28d</th><th>HSR ratio</th><th>Sprint 7d</th><th>Sprint 28d</th><th>Sprint ratio</th><th>Acc/Dec 7d</th><th>Acc/Dec 28d</th><th>Acc/Dec ratio</th></tr></thead>
+    <thead><tr><th>Jogador</th><th>Posição</th><th>Estado</th><th>Combinado (ratio)</th><th>Dist. 7d</th><th>Dist. 28d</th><th>Dist. ratio</th><th>HSR 7d</th><th>HSR 28d</th><th>HSR ratio</th><th>Sprint 7d</th><th>Sprint 28d</th><th>Sprint ratio</th><th>Acc/Dec 7d</th><th>Acc/Dec 28d</th><th>Acc/Dec ratio</th></tr></thead>
     <tbody></tbody>
   </table>
 </div>
@@ -724,23 +725,16 @@ async function computeAllMetrics(refDate){
       }
       const nSrpeDays = Object.keys(srpeMap).length;
       entry.nSrpeDays = nSrpeDays;
-      let srpeRatio = null;
       if(nSrpeDays>=5){
         const acuteS = windowAvg(srpeMap, refDate, 7, null, true);
         const chronicS = windowAvg(srpeMap, refDate, 28, null, true);
         if(chronicS>0){
           entry.srpe = {acute_avg:acuteS, chronic_avg:chronicS, ratio: Math.round((acuteS/chronicS)*100)/100};
-          srpeRatio = entry.srpe.ratio;
         }
       }
-      const distRatio = (entry.multimetric && entry.multimetric.distancia) ? entry.multimetric.distancia.ratio : null;
-      if(srpeRatio!=null && distRatio!=null){
-        entry.combined = {ratio: Math.round(((srpeRatio+distRatio)/2)*100)/100, source:'sRPE + Distância (média dos dois rácios)'};
-      } else if(srpeRatio!=null){
-        entry.combined = {ratio: srpeRatio, source:'sRPE (sem distância suficiente)'};
-      } else if(distRatio!=null){
-        entry.combined = {ratio: distRatio, source:'Distância (sem RPE+duração suficientes para sRPE)'};
-      }
+      // "entry.combined" (mistura sRPE + Distância) só é calculado depois de aplicar a rampa de
+      // onboarding/regresso de lesão (applyRampOverrides, abaixo), porque pode alterar o ratio de
+      // distância -- ver o loop logo a seguir a essa chamada.
     }
     if(wellness[player]){
       const dates = Object.keys(wellness[player]).sort();
@@ -793,7 +787,111 @@ async function computeAllMetrics(refDate){
     }
     out[player] = entry;
   }
+
+  await applyRampOverrides(out, gps, refDate);
+
+  // "combined" (mistura sRPE + Distância) calculado só agora, já com os valores de crónica
+  // possivelmente substituídos pela rampa -- garante que o ACWR principal na aba Hoje também
+  // reflete a carga de referência, não só os alvos da aba Planeamento.
+  for(const player in out){
+    const entry = out[player];
+    const srpeRatio = entry.srpe ? entry.srpe.ratio : null;
+    const distRatio = (entry.multimetric && entry.multimetric.distancia) ? entry.multimetric.distancia.ratio : null;
+    if(srpeRatio!=null && distRatio!=null){
+      entry.combined = {ratio: Math.round(((srpeRatio+distRatio)/2)*100)/100, source:'sRPE + Distância (média dos dois rácios)'};
+    } else if(srpeRatio!=null){
+      entry.combined = {ratio: srpeRatio, source:'sRPE (sem distância suficiente)'};
+    } else if(distRatio!=null){
+      entry.combined = {ratio: distRatio, source:'Distância (sem RPE+duração suficientes para sRPE)'};
+    }
+  }
+
   return out;
+}
+
+// Rampa de onboarding/regresso de lesão: para jogadores com estado ativo em series_player_status,
+// substitui a crónica (o denominador do ACWR e a base dos alvos da aba Planeamento) por uma carga
+// de referência escalada por um fator que sobe com o nº de sessões reais já acumuladas desde o
+// início do estado -- em vez da crónica própria do jogador, que nesta fase está artificialmente
+// baixa (poucos ou nenhuns dias de treino no clube ainda). Ver a conversa que definiu isto: para
+// ONBOARDING usa-se a média de jogadores estabelecidos da mesma posição (fallback: equipa toda,
+// se houver menos de 3 colegas de posição fiáveis); para RETORNO_LESAO usa-se a última crónica
+// própria conhecida ANTES do estado ser marcado (guardada em series_player_status[jogador].refChronic
+// no momento em que o staff marca o estado). Quando o nº de sessões atinge o alvo (sessoesAlvo),
+// a rampa "termina" e deixa de haver substituição -- volta a usar-se a crónica própria normal.
+async function applyRampOverrides(out, gps, refDate){
+  const VKEYS = ['distancia','hsr','sprint','acc_dec'];
+  const RAMP_START_FACTOR = 0.55; // fração da carga de referência no dia 1 da rampa
+  const positions = await getSeries('series_positions');
+  const playerStatus = await getSeries('series_player_status');
+
+  function sessionsSince(player, sinceDate){
+    if(!gps[player]) return 0;
+    return Object.keys(gps[player]).filter(d => d>=sinceDate && d<=refDate).length;
+  }
+
+  const activeRamps = {};
+  for(const player in playerStatus){
+    const st = playerStatus[player];
+    if(!st || !st.status) continue;
+    const sessoesAlvo = st.sessoesAlvo || RAMP_SESSOES_DEFAULT;
+    const sessionsDone = sessionsSince(player, st.inicio);
+    if(sessionsDone >= sessoesAlvo) continue; // rampa já concluída -- usa a crónica própria normal
+    const frac = Math.min(1, sessionsDone / sessoesAlvo);
+    const factor = RAMP_START_FACTOR + (1-RAMP_START_FACTOR)*frac;
+    activeRamps[player] = {status: st.status, factor, sessionsDone, sessoesAlvo, refChronic: st.refChronic};
+  }
+  if(Object.keys(activeRamps).length===0) return;
+
+  const isEstablished = (p, vkeyCheck) => !activeRamps[p] && out[p] && out[p].multimetric && out[p].multimetric[vkeyCheck] && (out[p].nSessions28||0) >= 10;
+  function peerAverage(vkey, pos){
+    let pool = Object.keys(out).filter(p => isEstablished(p, vkey) && (pos ? positions[p]===pos : true));
+    if(pos && pool.length < 3) pool = Object.keys(out).filter(p => isEstablished(p, vkey)); // fallback: equipa toda
+    if(pool.length === 0) return null;
+    const vals = pool.map(p => out[p].multimetric[vkey].chronic_avg);
+    return vals.reduce((a,b)=>a+b,0)/vals.length;
+  }
+  const isEstablishedSrpe = (p) => !activeRamps[p] && out[p] && out[p].srpe && (out[p].nSessions28||0) >= 10;
+  function peerAverageSrpe(pos){
+    let pool = Object.keys(out).filter(p => isEstablishedSrpe(p) && (pos ? positions[p]===pos : true));
+    if(pos && pool.length < 3) pool = Object.keys(out).filter(isEstablishedSrpe);
+    if(pool.length === 0) return null;
+    const vals = pool.map(p => out[p].srpe.chronic_avg);
+    return vals.reduce((a,b)=>a+b,0)/vals.length;
+  }
+
+  for(const player in activeRamps){
+    const ramp = activeRamps[player];
+    const entry = out[player];
+    if(!entry) continue;
+    const pos = positions[player] || null;
+    entry.rampInfo = {tipo: ramp.status, sessionsDone: ramp.sessionsDone, sessoesAlvo: ramp.sessoesAlvo};
+    if(gps[player]){
+      entry.multimetric = entry.multimetric || {};
+      for(const vkey of VKEYS){
+        const refVal = ramp.status==='RETORNO_LESAO'
+          ? (ramp.refChronic ? ramp.refChronic[vkey] : null)
+          : peerAverage(vkey, pos);
+        if(refVal==null || refVal<=0) continue; // sem referência disponível -- mantém o valor calculado normalmente
+        const effectiveChronic = refVal * ramp.factor;
+        const acute = windowAvg(gps[player], refDate, 7, vkey);
+        entry.multimetric[vkey] = {
+          acute_avg: acute,
+          chronic_avg: Math.round(effectiveChronic*10)/10,
+          ratio: effectiveChronic>0 ? Math.round((acute/effectiveChronic)*100)/100 : null
+        };
+      }
+    }
+    if(entry.srpe){
+      const refValS = ramp.status==='RETORNO_LESAO'
+        ? (ramp.refChronic ? ramp.refChronic.srpe : null)
+        : peerAverageSrpe(pos);
+      if(refValS!=null && refValS>0){
+        const effS = refValS * ramp.factor;
+        entry.srpe = {acute_avg: entry.srpe.acute_avg, chronic_avg: Math.round(effS*10)/10, ratio: Math.round((entry.srpe.acute_avg/effS)*100)/100};
+      }
+    }
+  }
 }
 
 async function loadDashboard(){
@@ -1080,6 +1178,25 @@ function pctPill(pct){
   const color = pct<50 ? 'var(--red)' : (pct<75 ? 'var(--yellow)' : 'var(--green)');
   return `<span style="color:${color};font-weight:600">${pct}%</span>`;
 }
+// A partir do arranque da competição oficial, os "amigáveis" (JP1, JP2, etc.) deixam de contar
+// para o Benchmark de jogo -- só jogos de "Jornada X" (competição oficial) representam bem a
+// intensidade de referência. classifyDayLabel() continua a tratar ambos como 'JOGO' (para
+// deteção automática de sessões, etc.); esta função é só para decidir o que entra no benchmark.
+function isOfficialGameLabel(label){
+  return norm(label).includes('jornada');
+}
+async function getOfficialGameDates(){
+  const sessions = await getSeries('series_sessions');
+  const roadmapGameDates = ROADMAP.filter(r=>classifyDayLabel(r.label)==='JOGO' && isOfficialGameLabel(r.label)).map(r=>r.data);
+  const manualGameDates = Object.keys(sessions).filter(d=>{
+    if(sessions[d].tipo!=='Jogo') return false;
+    const roadmapDay = ROADMAP.find(r=>r.data===d);
+    // se o dia existe no calendário, só conta se for jornada oficial; se foi marcado manualmente
+    // sem correspondência no calendário, assume-se jogo oficial por defeito.
+    return roadmapDay ? isOfficialGameLabel(roadmapDay.label) : true;
+  });
+  return [...new Set([...roadmapGameDates, ...manualGameDates])];
+}
 async function renderBenchmarkTables(){
   const labels = {distancia:'Distância (m)', hsr:'HSR (m)', sprint:'Sprint (m)', acc_dec:'Acc/Dec (nº, 2 m/s²)'};
   const body = document.querySelector('#benchTable tbody');
@@ -1089,10 +1206,7 @@ async function renderBenchmarkTables(){
   let realGame = null;
   try{
     const gps = await getSeries('series_gps');
-    const sessions = await getSeries('series_sessions');
-    const roadmapGameDates = ROADMAP.filter(r=>classifyDayLabel(r.label)==='JOGO').map(r=>r.data);
-    const manualGameDates = Object.keys(sessions).filter(d=>sessions[d].tipo==='Jogo');
-    const gameDates = [...new Set([...roadmapGameDates, ...manualGameDates])];
+    const gameDates = await getOfficialGameDates();
     if(gameDates.length){
       realGame = {distancia:[], hsr:[], sprint:[], acc_dec:[]};
       for(const date of gameDates){
@@ -1133,10 +1247,7 @@ async function renderBenchmarkTables(){
     const positions = await getSeries('series_positions');
     if(Object.keys(positions).length){
       const gps2 = await getSeries('series_gps');
-      const sessions2 = await getSeries('series_sessions');
-      const roadmapGameDates2 = ROADMAP.filter(r=>classifyDayLabel(r.label)==='JOGO').map(r=>r.data);
-      const manualGameDates2 = Object.keys(sessions2).filter(d=>sessions2[d].tipo==='Jogo');
-      const gameDates2 = [...new Set([...roadmapGameDates2, ...manualGameDates2])];
+      const gameDates2 = await getOfficialGameDates();
       realByPos = {};
       for(const pos of ['DC','LAT','MC','EXT','AC']) realByPos[pos] = {distancia:[],hsr:[],sprint:[],acc_dec:[]};
       for(const date of gameDates2){
@@ -1248,11 +1359,51 @@ async function editRoadmapDay(idx, vkey, value){
   setStatus('manualProfileStatus', true, `${ROADMAP[idx].data} atualizado: ${vkey} = ${val}% (só este dia, não afeta o resto do tipo "${ROADMAP[idx].label}").`);
 }
 
+async function editPlayerPosition(player, newPos){
+  const positions = await getSeries('series_positions');
+  if(newPos){ positions[player] = newPos; } else { delete positions[player]; }
+  await setSeries('series_positions', positions);
+  loadTecnico();
+}
+
+// Estado do jogador para efeitos de carga de referência (ver applyRampOverrides): ONBOARDING usa a
+// média da equipa/posição como base; RETORNO_LESAO usa a última crónica própria conhecida (capturada
+// no momento em que o estado é marcado). RAMP_SESSOES_DEFAULT = nº de sessões reais até a rampa
+// terminar e passar a usar a crónica própria do jogador outra vez.
+const RAMP_SESSOES_DEFAULT = 16;
+async function editPlayerStatus(player, newStatus){
+  const statusMap = await getSeries('series_player_status');
+  if(!newStatus){
+    delete statusMap[player];
+  } else {
+    const today = await getRefDate();
+    const rec = {status:newStatus, inicio:today, sessoesAlvo:RAMP_SESSOES_DEFAULT};
+    if(newStatus==='RETORNO_LESAO'){
+      // snapshot da crónica própria ANTES de aplicar qualquer rampa (ainda não há estado gravado,
+      // por isso computeAllMetrics devolve aqui os valores próprios reais, não sobrepostos).
+      const metrics = await computeAllMetrics(today);
+      const m = metrics[player];
+      const refChronic = {};
+      if(m && m.multimetric){
+        for(const vkey of ['distancia','hsr','sprint','acc_dec']){
+          if(m.multimetric[vkey]) refChronic[vkey] = m.multimetric[vkey].chronic_avg;
+        }
+      }
+      if(m && m.srpe) refChronic.srpe = m.srpe.chronic_avg;
+      rec.refChronic = refChronic;
+    }
+    statusMap[player] = rec;
+  }
+  await setSeries('series_player_status', statusMap);
+  loadTecnico();
+}
+
 async function loadTecnico(){
   const today = await getRefDate();
   const metrics = await computeAllMetrics(today);
   const gps = await getSeries('series_gps');
   const positions = await getSeries('series_positions');
+  const playerStatus = await getSeries('series_player_status');
   const body = document.querySelector('#techTable tbody');
   body.innerHTML = '';
   const posOrder = {'DC':0,'LAT':1,'MC':2,'EXT':3,'AC':4};
@@ -1269,7 +1420,7 @@ async function loadTecnico(){
     if(pos!==lastPos){
       const groupRow = document.createElement('tr');
       const groupCell = document.createElement('td');
-      groupCell.colSpan = 15;
+      groupCell.colSpan = 16;
       groupCell.style.background = 'var(--panel2)';
       groupCell.style.color = 'var(--accent)';
       groupCell.style.fontWeight = '600';
@@ -1286,14 +1437,21 @@ async function loadTecnico(){
     const combined = m.combined ? `${m.combined.ratio} (${m.combined.source})` : '—';
     const tr = document.createElement('tr');
     tr.style.cursor = 'pointer';
-    tr.innerHTML = `<td>${player} <span style="color:var(--muted);font-size:10px;">(clicar p/ detalhe)</span></td><td>${pos||'—'}</td><td>${combined}</td>
+    const posOptions = ['','DC','LAT','MC','EXT','AC'].map(p=>`<option value="${p}" ${p===(pos||'')?'selected':''}>${p||'— sem posição —'}</option>`).join('');
+    const curStatus = (playerStatus[player] && playerStatus[player].status) || '';
+    const statusOptions = [['','Normal'],['ONBOARDING','Onboarding (novo)'],['RETORNO_LESAO','Regresso de lesão']]
+      .map(([v,l])=>`<option value="${v}" ${v===curStatus?'selected':''}>${l}</option>`).join('');
+    const rampBadge = m.rampInfo
+      ? `<br><span style="color:var(--accent);font-size:10px;">rampa: ${m.rampInfo.sessionsDone}/${m.rampInfo.sessoesAlvo} sessões</span>`
+      : (curStatus ? `<br><span style="color:var(--green);font-size:10px;">rampa concluída</span>` : '');
+    tr.innerHTML = `<td>${player} <span style="color:var(--muted);font-size:10px;">(clicar p/ detalhe)</span></td><td><select onclick="event.stopPropagation()" onchange="editPlayerPosition('${player.replace(/'/g,"\\'")}', this.value)" style="background:var(--panel2);color:inherit;border:1px solid var(--border);border-radius:4px;padding:2px 4px;">${posOptions}</select></td><td><select onclick="event.stopPropagation()" onchange="editPlayerStatus('${player.replace(/'/g,"\\'")}', this.value)" style="background:var(--panel2);color:inherit;border:1px solid var(--border);border-radius:4px;padding:2px 4px;">${statusOptions}</select>${rampBadge}</td><td>${combined}</td>
       <td>${cell('distancia','acute_avg')}</td><td>${cell('distancia','chronic_avg')}</td><td>${cell('distancia','ratio')}</td>
       <td>${cell('hsr','acute_avg')}</td><td>${cell('hsr','chronic_avg')}</td><td>${cell('hsr','ratio')}</td>
       <td>${cell('sprint','acute_avg')}</td><td>${cell('sprint','chronic_avg')}</td><td>${cell('sprint','ratio')}</td>
       <td>${cell('acc_dec','acute_avg')}</td><td>${cell('acc_dec','chronic_avg')}</td><td>${cell('acc_dec','ratio')}</td>`;
     const detailRow = document.createElement('tr');
     const detailCell = document.createElement('td');
-    detailCell.colSpan = 15;
+    detailCell.colSpan = 16;
     detailCell.style.display = 'none';
     detailCell.style.background = 'var(--panel2)';
     if(gps[player]){
