@@ -1377,6 +1377,13 @@ async function loadPlaneamento(){
   try{
     const gps = await getSeries('series_gps');
     const metrics = await computeAllMetrics(today);
+    const positions = await getSeries('series_positions');
+    const posOrder = {'DC':0,'LAT':1,'MC':2,'EXT':3,'AC':4};
+    const posFullName = {'DC':'Defesa Central','LAT':'Lateral','MC':'Médio Centro','EXT':'Extremo','AC':'Avançado'};
+    const sortedPlayers = [...CANONICAL].sort((a,b)=>{
+      const pa = posOrder[positions[a]] ?? 99, pb = posOrder[positions[b]] ?? 99;
+      return pa-pb || a.localeCompare(b);
+    });
     const cycleDates = ROADMAP.filter(r => r.data>=cycleStart && r.data<day.data && !isProtectedDay(r));
 
     function devPill(pctDev){
@@ -1388,9 +1395,27 @@ async function loadPlaneamento(){
       return `<span style="color:${color}">${arrow} ${sign}${Math.abs(pctDev)}%</span>`;
     }
 
-    for(const player of CANONICAL){
+    let lastPos = null;
+    for(const player of sortedPlayers){
       const m = metrics[player];
       if(!m || !m.multimetric) continue;
+
+      const pos = positions[player] || null;
+      if(pos!==lastPos){
+        const groupRow = document.createElement('tr');
+        const groupCell = document.createElement('td');
+        groupCell.colSpan = 13;
+        groupCell.style.background = 'var(--panel2)';
+        groupCell.style.color = 'var(--accent)';
+        groupCell.style.fontWeight = '600';
+        groupCell.style.fontSize = '11px';
+        groupCell.style.textTransform = 'uppercase';
+        groupCell.style.letterSpacing = '.5px';
+        groupCell.textContent = pos ? `${posFullName[pos]} (${pos})` : 'Sem posição capturada';
+        groupRow.appendChild(groupCell);
+        tbody.appendChild(groupRow);
+        lastPos = pos;
+      }
 
       function calc(vkey){
         const v = m.multimetric[vkey];
