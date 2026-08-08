@@ -2,62 +2,184 @@
 <html lang="pt">
 <head>
 <meta charset="UTF-8">
-<title>SC Vianense — Performance OS</title>
+<title>Performance2win</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
   :root{
-    --bg:#0b1210; --panel:#111b18; --panel2:#15211d; --line:#22322c;
-    --text:#e9efe9; --muted:#8ea69a;
-    --green:#3fae6a; --yellow:#d9a441; --red:#c85450; --blue:#5b9bd5;
+    --bg:#0a1210; --bg2:#0d1815; --panel:#111c19; --panel2:#16231f; --line:#25352e;
+    --text:#eef3ee; --muted:#8fa89c;
+    --green:#38b874; --green2:#2a9560; --yellow:#e0ac46; --red:#e05a56; --blue:#5ba3e0;
+    --shadow:0 4px 16px rgba(0,0,0,0.28), 0 1px 3px rgba(0,0,0,0.35);
+    --shadow-sm:0 2px 8px rgba(0,0,0,0.22);
+    --radius:14px; --radius-sm:9px;
   }
   *{box-sizing:border-box;}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;padding:28px 22px 80px;}
-  header{margin-bottom:16px;}
-  h1{font-size:22px;margin:0 0 6px;font-weight:700;}
-  h2{font-size:13px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin:24px 0 12px;display:flex;align-items:center;gap:10px;}
-  h2::after{content:'';flex:1;height:1px;background:var(--line);}
+  body{margin:0;background:radial-gradient(circle at 12% 0%, #10231c 0%, var(--bg) 45%) fixed;color:var(--text);font-family:'Inter',-apple-system,'Segoe UI',system-ui,sans-serif;padding:28px 22px 80px;-webkit-font-smoothing:antialiased;letter-spacing:.1px;}
+  ::-webkit-scrollbar{width:10px;height:10px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:10px;}
+  ::-webkit-scrollbar-thumb:hover{background:var(--green2);}
+  header{margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brandTitle{font-size:23px;font-weight:800;letter-spacing:-.5px;color:var(--text);}
+  .brandTitle .accent{color:var(--green);}
+  .seasonSwitcher{display:flex;align-items:center;gap:8px;}
+  .clubBadge{width:36px;height:36px;border-radius:9px;background:linear-gradient(160deg,var(--panel),var(--bg2));border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;flex:0 0 auto;}
+  #seasonSelect{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-weight:700;font-size:13px;cursor:pointer;}
+  .iconBtn{width:36px;height:36px;border-radius:9px;background:var(--panel2);border:1px solid var(--line);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;flex:0 0 auto;transition:border-color .15s;}
+  .iconBtn:hover{border-color:var(--green);color:var(--green);}
+  #seasonEditBox{background:linear-gradient(160deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px;max-width:340px;}
+  h1{font-size:23px;margin:0 0 6px;font-weight:800;letter-spacing:-.2px;background:linear-gradient(90deg,var(--text),var(--green) 140%);-webkit-background-clip:text;background-clip:text;}
+  h2{font-size:12.5px;text-transform:uppercase;letter-spacing:1.6px;color:var(--muted);margin:24px 0 12px;display:flex;align-items:center;gap:10px;font-weight:700;}
+  h2::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent);}
   .sub{color:var(--muted);font-size:13px;line-height:1.6;}
-  .tabs{display:flex;gap:4px;margin:18px 0 20px;border-bottom:1px solid var(--line);flex-wrap:wrap;}
-  .tab{padding:10px 16px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;}
-  .tab:hover{color:var(--text);}
-  .tab.active{color:var(--text);border-bottom-color:var(--green);}
+  .layout{display:flex;gap:24px;align-items:flex-start;margin-top:18px;}
+  .sidebar{flex:0 0 196px;position:sticky;top:16px;display:flex;flex-direction:column;gap:3px;}
+  .mainContent{flex:1;min-width:0;}
+  .tab{padding:10px 14px;font-size:13px;color:var(--muted);cursor:pointer;white-space:nowrap;border-radius:10px;border:1px solid transparent;transition:all .16s ease;font-weight:500;}
+  .tab:hover{color:var(--text);background:var(--panel2);transform:translateX(2px);}
+  .tab.active{color:#06110c;background:linear-gradient(135deg,var(--green),var(--green2));font-weight:700;box-shadow:var(--shadow-sm);}
+  .sidebarGroup{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);opacity:.6;margin:16px 0 4px;padding:0 6px;font-weight:700;}
+  .sidebarGroup:first-child{margin-top:0;}
   .panel{display:none;}
-  .panel.active{display:block;}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin-bottom:16px;}
-  .card h3{margin:0 0 4px;font-size:15px;}
+  .panel.active{display:block;animation:fadeIn .25s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(3px);}to{opacity:1;transform:translateY(0);}}
+  @media(max-width:820px){
+    .layout{flex-direction:column;}
+    .sidebar{flex-direction:row;flex-wrap:wrap;position:static;width:100%;}
+  }
+  .collapseAllBtn{margin-bottom:14px;}
+  details.csection{background:linear-gradient(160deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:var(--radius);margin-bottom:16px;overflow:hidden;box-shadow:var(--shadow-sm);transition:border-color .15s;}
+  details.csection:hover{border-color:#324840;}
+  details.csection > summary{list-style:none;cursor:pointer;padding:14px 18px;font-size:12.5px;text-transform:uppercase;letter-spacing:1.6px;color:var(--muted);font-weight:700;display:flex;align-items:center;gap:8px;user-select:none;}
+  details.csection > summary::-webkit-details-marker{display:none;}
+  details.csection > summary::before{content:'▸';display:inline-block;transition:transform .15s;color:var(--accent,var(--green));}
+  details.csection[open] > summary::before{transform:rotate(90deg);}
+  details.csection > summary:hover{color:var(--text);}
+  details.csection > .csectionBody{padding:0 18px 18px;}
+  .reorderable{position:relative;}
+  .dragHandle{float:right;color:var(--muted);cursor:grab;font-size:15px;padding:0 4px;user-select:none;-webkit-user-select:none;touch-action:none;}
+  .dragHandle:active{cursor:grabbing;}
+  .reorderable.dragging{opacity:0.4;}
+  .reorderable.dragOver{outline:2px dashed var(--green);outline-offset:2px;}
+  .resizableBox{resize:both;overflow:hidden;min-width:200px;min-height:70px;container-type:inline-size;container-name:box;}
+  /* Dashboard: posicionamento totalmente livre (x/y em pixels, não alinhado a fila/coluna nenhuma)
+     -- cada caixa é position:absolute dentro do contentor; a posição de arrasto fica guardada em
+     localStorage por caixa (ver makeFreeLayout). overflow:hidden (nunca scrollbar) porque o texto
+     lá dentro já se ajusta sozinho ao tamanho da caixa (tipografia fluida, ver clamp() acima). */
+  #homeAlertsBox{position:relative;}
+  #homeAlertsBox > .resizableBox{position:absolute;margin:0;}
+  #homeAlertsBox > .resizableBox.dragging{opacity:0.75;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
+  /* Tipografia fluida: o texto dentro de uma caixa redimensionável escala com a largura da própria
+     caixa (cqi = 1% da largura do container), não com o ecrã. !important porque muito do texto
+     gerado por JS usa font-size inline (ex.: homeStat, weekcell) que senão ganhava sempre à regra. */
+  .resizableBox h3{font-size:clamp(13px,4.2cqi,20px) !important;}
+  .resizableBox div,.resizableBox span,.resizableBox p,.resizableBox td,.resizableBox th,.resizableBox label,.resizableBox b{font-size:clamp(10px,2.3cqi,15px) !important;}
+  .resizableBox .homeStat .num{font-size:clamp(16px,6.5cqi,30px) !important;}
+  .resizableBox .homeStat .lbl{font-size:clamp(9px,2.3cqi,12px) !important;}
+  .resizableBox .dragHandle{font-size:clamp(12px,3cqi,17px) !important;}
+  .resizableBox button,.resizableBox select,.resizableBox input{font-size:clamp(11px,2.3cqi,14px) !important;}
+  /* O calendário de mês tem a sua própria escala mais fina por elemento (número do dia, pill,
+     título do mês) -- estas regras têm de ganhar à regra genérica acima (mesma especificidade
+     com !important => a última declarada no CSS é que vale, por isso vêm depois). */
+  .resizableBox .monthCalTitle{font-size:clamp(12px,4.5cqi,17px) !important;}
+  .resizableBox .monthDow{font-size:clamp(7px,2cqi,10.5px) !important;}
+  .resizableBox .monthCellNum{font-size:clamp(8px,2.6cqi,12px) !important;}
+  .resizableBox .monthPill{font-size:clamp(6.5px,1.8cqi,9.5px) !important;}
+  .homeGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:12px;}
+  /* Calendário do Dashboard: vista de mês completa (estilo app de calendário de telemóvel) --
+     cabeçalho com navegação de mês, linha de dias da semana, e uma grelha de 6 semanas com o
+     número do dia + uma "pill" colorida por tipo de dia. Dias fora do mês em curso ficam
+     esbatidos, hoje fica destacado com um círculo à volta do número. */
+  .monthCalHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .monthCalTitle{font-weight:800;font-size:clamp(12px,4.5cqi,17px);text-transform:capitalize;}
+  .monthCalNavBtn{width:28px;height:28px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;}
+  .monthCalNavBtn:hover{border-color:var(--green);color:var(--green);}
+  .monthGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .monthDow{font-size:clamp(7px,2cqi,10.5px);text-transform:uppercase;color:var(--muted);text-align:center;font-weight:700;padding-bottom:2px;}
+  .monthCell{background:var(--panel2);border-radius:8px;padding:clamp(2px,1cqi,6px);min-height:clamp(28px,9cqi,52px);cursor:grab;border:1px solid transparent;transition:border-color .12s;}
+  .monthCell:hover{border-color:var(--line);}
+  .monthCell.outMonth{opacity:0.35;}
+  .monthCell.dragOverCell{border-color:var(--green);}
+  .monthCellNum{font-size:clamp(8px,2.6cqi,12px);font-weight:700;width:clamp(14px,4.5cqi,20px);height:clamp(14px,4.5cqi,20px);display:flex;align-items:center;justify-content:center;border-radius:50%;}
+  .monthCellNum.today{background:var(--green);color:#0b1210;}
+  .monthPill{margin-top:3px;font-size:clamp(6.5px,1.8cqi,9.5px);font-weight:700;padding:clamp(1px,0.5cqi,2px) clamp(2px,1cqi,4px);border-radius:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .homeStat{background:linear-gradient(160deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;cursor:pointer;transition:all .18s ease;box-shadow:var(--shadow-sm);}
+  .homeStat:hover{border-color:var(--green);transform:translateY(-2px);box-shadow:var(--shadow);}
+  .homeStat .num{font-size:27px;font-weight:800;letter-spacing:-.5px;}
+  .homeStat .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-top:4px;font-weight:600;}
+  .homeNavGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
+  .homeNavBtn{background:var(--panel2);border:1px solid var(--line);border-radius:var(--radius-sm);padding:14px;text-align:left;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
+  .homeNavBtn:hover{border-color:var(--green);transform:translateY(-1px);}
+  .homeNavBtn .sub2{display:block;font-weight:400;color:var(--muted);font-size:11px;margin-top:3px;}
+  details.pcard{background:linear-gradient(160deg,var(--panel),var(--bg2));border-radius:var(--radius);border-left:4px solid var(--c);margin:0;box-shadow:var(--shadow-sm);transition:box-shadow .15s;}
+  details.pcard:hover{box-shadow:var(--shadow);}
+  details.pcard>summary{cursor:pointer;padding:12px 16px;font-weight:700;font-size:14.5px;list-style:none;display:flex;align-items:center;gap:8px;}
+  details.pcard>summary::-webkit-details-marker{display:none;}
+  details.pcard>summary::before{content:'▸';color:var(--muted);font-size:11px;}
+  details.pcard[open]>summary::before{content:'▾';}
+  details.pcard>.pcardBody{padding:0 16px 16px;}
+  /* Aba Calendário: a grelha de semanas ajusta o tamanho das células e da letra ao espaço
+     disponível (cqi = 1% da largura do contentor #calWeeksGrid) -- não é redimensionável à mão
+     como as caixas do dashboard, mas responde ao encolher/alargar da janela ou da sidebar. */
+  #calWeeksGrid{container-type:inline-size;container-name:calweek;}
+  .weekgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:10px;}
+  .weekcell{cursor:pointer;border-radius:var(--radius-sm);padding:clamp(4px,2cqi,10px) clamp(3px,1.5cqi,8px);text-align:center;transition:transform .12s;}
+  .weekcell:hover{transform:translateY(-1px);}
+  .weekcell div{font-size:clamp(8px,2.2cqi,11px) !important;}
+  .grouprow{cursor:pointer;user-select:none;}
+  .grouprow td{background:var(--panel2);color:var(--accent,var(--green));font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.6px;}
+  .card{background:linear-gradient(160deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;margin-bottom:16px;box-shadow:var(--shadow-sm);}
+  /* Planeamento Individual: 4 grupos de variáveis (Distância/HSR/Sprint/Acc-Dec), cada um com 4
+     colunas (alvo/reajustado/real/desvio) -- tons alternados + borda forte entre grupos para
+     distinguir visualmente de relance qual coluna pertence a qual variável. */
+  #planTable th:nth-child(2),#planTable td:nth-child(2),#planTable th:nth-child(3),#planTable td:nth-child(3),#planTable th:nth-child(4),#planTable td:nth-child(4),#planTable th:nth-child(5),#planTable td:nth-child(5){background:rgba(94,163,255,0.07);}
+  #planTable th:nth-child(6),#planTable td:nth-child(6),#planTable th:nth-child(7),#planTable td:nth-child(7),#planTable th:nth-child(8),#planTable td:nth-child(8),#planTable th:nth-child(9),#planTable td:nth-child(9){background:rgba(63,174,106,0.07);}
+  #planTable th:nth-child(10),#planTable td:nth-child(10),#planTable th:nth-child(11),#planTable td:nth-child(11),#planTable th:nth-child(12),#planTable td:nth-child(12),#planTable th:nth-child(13),#planTable td:nth-child(13){background:rgba(230,180,60,0.08);}
+  #planTable th:nth-child(14),#planTable td:nth-child(14),#planTable th:nth-child(15),#planTable td:nth-child(15),#planTable th:nth-child(16),#planTable td:nth-child(16),#planTable th:nth-child(17),#planTable td:nth-child(17){background:rgba(230,90,90,0.07);}
+  #planTable th:nth-child(2),#planTable td:nth-child(2),#planTable th:nth-child(6),#planTable td:nth-child(6),#planTable th:nth-child(10),#planTable td:nth-child(10),#planTable th:nth-child(14),#planTable td:nth-child(14){border-left:2px solid var(--line);}
+  #planTable th:nth-child(5),#planTable td:nth-child(5),#planTable th:nth-child(9),#planTable td:nth-child(9),#planTable th:nth-child(13),#planTable td:nth-child(13){border-right:2px solid var(--line);}
+  .card h3{margin:0 0 14px;padding-bottom:10px;border-bottom:1px solid var(--line);font-size:15px;font-weight:700;letter-spacing:.2px;}
   .card .desc{color:var(--muted);font-size:12.5px;margin-bottom:14px;}
   input[type=file]{display:block;width:100%;font-size:13px;color:var(--muted);margin-bottom:8px;}
-  input[type=date],input[type=text],input[type=number],select,textarea{
-    background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:8px 10px;font-size:13px;width:100%;margin-bottom:10px;
+  input[type=date],input[type=text],input[type=number],input[type=password],select,textarea{
+    background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:var(--radius-sm);padding:9px 11px;font-size:13px;width:100%;margin-bottom:10px;transition:border-color .15s,box-shadow .15s;
   }
-  label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;}
-  button{background:var(--green);color:#0b1210;border:none;border-radius:6px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;}
-  button:hover{opacity:0.9;}
-  button.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line);}
-  .status{font-size:12.5px;margin-top:10px;padding:8px 10px;border-radius:6px;}
-  .status.ok{background:rgba(63,174,106,0.1);color:var(--green);border:1px solid rgba(63,174,106,0.3);}
-  .status.err{background:rgba(200,84,80,0.1);color:var(--red);border:1px solid rgba(200,84,80,0.3);}
-  .note{font-size:12px;color:var(--muted);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:16px;line-height:1.55;}
-  .plist{display:grid;grid-template-columns:1fr;gap:12px;}
-  @media(min-width:1000px){ .plist{grid-template-columns:1fr 1fr;} }
-  .pcard{background:var(--panel);border-radius:12px;padding:16px 18px;border-left:5px solid var(--c);}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(56,184,116,0.15);}
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:500;}
+  button{background:linear-gradient(135deg,var(--green),var(--green2));color:#06110c;border:none;border-radius:var(--radius-sm);padding:9px 17px;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s ease;box-shadow:var(--shadow-sm);}
+  button:hover{filter:brightness(1.08);transform:translateY(-1px);box-shadow:var(--shadow);}
+  button:active{transform:translateY(0);}
+  button.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line);box-shadow:none;}
+  button.secondary:hover{border-color:var(--green);filter:none;}
+  .status{font-size:12.5px;margin-top:10px;padding:8px 10px;border-radius:var(--radius-sm);}
+  .status.ok{background:rgba(56,184,116,0.1);color:var(--green);border:1px solid rgba(56,184,116,0.3);}
+  .status.err{background:rgba(224,90,86,0.1);color:var(--red);border:1px solid rgba(224,90,86,0.3);}
+  .note{font-size:12px;color:var(--muted);background:var(--panel2);border:1px solid var(--line);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:16px;line-height:1.55;}
+  .plist{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+  @media(max-width:900px){ .plist{grid-template-columns:repeat(2,minmax(0,1fr));} }
+  @media(max-width:560px){ .plist{grid-template-columns:1fr;} }
+  .pcard{background:var(--panel);border-radius:var(--radius);padding:16px 18px;border-left:4px solid var(--c);}
   .pcard .pname{font-size:15px;font-weight:700;margin-bottom:4px;}
   .pcard .preason{font-size:12.5px;color:var(--muted);line-height:1.5;}
-  .painbox{font-size:12px;color:var(--pc,var(--red));background:var(--pc-bg,rgba(200,84,80,0.08));border:1px solid var(--pc-border,rgba(200,84,80,0.3));border-radius:6px;padding:6px 9px;margin-top:8px;}
-  .cargabox{font-size:12px;color:var(--text);background:var(--panel2);border-radius:6px;padding:8px 10px;margin-top:8px;line-height:1.6;}
-  .glabel{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;margin:18px 0 10px;}
-  .gdot{width:11px;height:11px;border-radius:50%;}
-  table{width:100%;border-collapse:collapse;font-size:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;}
-  th,td{padding:7px 9px;text-align:left;border-bottom:1px solid var(--line);}
-  th{color:var(--muted);font-weight:600;text-transform:uppercase;font-size:10px;background:var(--panel2);}
-  .rowbtn{background:transparent;border:1px solid var(--line);color:var(--muted);padding:3px 9px;font-size:11px;border-radius:5px;}
+  .painbox{font-size:12px;color:var(--pc,var(--red));background:var(--pc-bg,rgba(224,90,86,0.08));border:1px solid var(--pc-border,rgba(224,90,86,0.3));border-radius:var(--radius-sm);padding:6px 9px;margin-top:8px;}
+  .cargabox{font-size:12px;color:var(--text);background:var(--panel2);border-radius:var(--radius-sm);padding:8px 10px;margin-top:8px;line-height:1.6;}
+  .glabel{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;margin:18px 0 10px;}
+  .gdot{width:11px;height:11px;border-radius:50%;box-shadow:0 0 0 3px rgba(255,255,255,0.05);}
+  table{width:100%;border-collapse:collapse;font-size:12px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-sm);}
+  th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);}
+  tbody tr{transition:background .12s;}
+  tbody tr:hover{background:var(--panel2);}
+  th{color:var(--muted);font-weight:700;text-transform:uppercase;font-size:10px;background:var(--panel2);letter-spacing:.5px;}
+  .rowbtn{background:transparent;border:1px solid var(--line);color:var(--muted);padding:3px 9px;font-size:11px;border-radius:var(--radius-sm);transition:all .15s;}
+  .rowbtn:hover{border-color:var(--green);color:var(--text);}
   .teamgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;}
-  .teamstat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;text-align:center;}
-  .teamstat .num{font-size:22px;font-weight:700;}
-  .teamstat .lbl{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:4px;}
+  .teamstat{background:linear-gradient(160deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:var(--radius-sm);padding:12px 14px;text-align:center;box-shadow:var(--shadow-sm);}
+  .teamstat .num{font-size:22px;font-weight:800;}
+  .teamstat .lbl{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:4px;font-weight:600;}
   body.locked > *:not(#authGate){display:none !important;}
   body:not(.locked) #authGate{display:none !important;}
 </style>
@@ -65,47 +187,105 @@
 <body class="locked">
 
 <div id="authGate" style="position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;">
-  <div style="width:280px;text-align:center;">
-    <h2 style="border:none;">Código de acesso</h2>
-    <input type="password" id="passcodeInput" placeholder="Código" style="text-align:center;" autocomplete="off">
-    <button onclick="checkPasscode()" style="width:100%;">Entrar</button>
+  <div style="width:340px;max-width:88vw;text-align:center;background:linear-gradient(160deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:20px;padding:36px 32px;box-shadow:var(--shadow);">
+    <div class="brandTitle" style="font-size:32px;margin-bottom:14px;">Performance<span class="accent">2win</span></div>
+    <div style="color:var(--muted);font-size:14px;margin-bottom:22px;line-height:1.4;">Dados partilhados — introduz a password de equipa.</div>
+    <input type="password" id="passcodeInput" placeholder="Password" style="text-align:center;background:#e9edf5;color:#111;border:none;border-radius:12px;padding:14px;font-size:15px;margin-bottom:14px;" autocomplete="off">
+    <button onclick="checkPasscode()" style="width:100%;border-radius:12px;padding:14px;font-size:15px;font-weight:700;">Entrar</button>
     <div id="passcodeStatus"></div>
   </div>
 </div>
 
 <header>
-  <h1 id="mainTitle" style="cursor:pointer;" onclick="editTitle()" title="Clica para editar o nome da equipa e a época">SC Vianense — Performance OS</h1>
-  <div id="titleEditBox" style="display:none;margin-bottom:10px;">
-    <label>Nome da equipa</label>
-    <input type="text" id="teamNameInput" placeholder="SC Vianense">
-    <label>Época</label>
-    <input type="text" id="teamSeasonInput" placeholder="ex: 2026/2027">
-    <button onclick="saveTitle()">Guardar</button>
-    <button class="secondary" onclick="cancelEditTitle()">Cancelar</button>
+  <div class="brand">
+    <span class="brandTitle">Performance<span class="accent">2win</span></span>
   </div>
-  <div class="sub">Upload diário + painel de decisão, sempre atualizado com o que já foi carregado.<br>
-  <b style="color:var(--green)">Dados guardados na cloud (Supabase), partilhados entre qualquer computador ou telemóvel</b> — basta o link e o código de acesso, não precisas de estar sempre no mesmo browser. Wellness e PSE podem ser atualizados automaticamente com um clique (Google Sheets); o calendário e o GPS continuam a ser upload manual do ficheiro. Faz backups periódicos na mesma (exporta os dados) — é sempre bom ter uma cópia de segurança à parte.</div>
+  <div class="seasonSwitcher">
+    <div class="clubBadge" id="clubBadge" title="Clube">⚽</div>
+    <select id="seasonSelect" onchange="switchSeason(this.value)" title="Trocar de época"></select>
+    <button class="iconBtn" onclick="addSeason()" title="Criar nova época">+</button>
+    <button class="iconBtn" onclick="editSeason()" title="Editar época atual">✏️</button>
+  </div>
 </header>
+<div id="seasonEditBox" style="display:none;">
+  <label>Época (ex: 2026/2027)</label>
+  <input type="text" id="seasonYearInput" placeholder="2026/2027">
+  <label>Nome do clube</label>
+  <input type="text" id="seasonClubInput" placeholder="SC Vianense SAD">
+  <button onclick="saveSeasonEdit()">Guardar</button>
+  <button class="secondary" onclick="cancelSeasonEdit()">Cancelar</button>
+  <div class="desc" style="margin-top:8px;">Nota: trocar de época muda só o que aparece aqui no cabeçalho — os dados (GPS, calendário, wellness, etc.) continuam os mesmos em todas as épocas nesta versão, não ficam separados por época.</div>
+</div>
 
-<div class="tabs">
-  <div class="tab active" data-tab="hoje">Hoje</div>
-  <div class="tab" data-tab="planeamento">Planeamento</div>
-  <div class="tab" data-tab="equipa">Equipa</div>
-  <div class="tab" data-tab="progressao">Gráficos</div>
-  <div class="tab" data-tab="benchmark">Benchmark de jogo</div>
-  <div class="tab" data-tab="tecnico">Dados técnicos</div>
-  <div class="tab" data-tab="history">Histórico</div>
-  <div class="tab" data-tab="upload">Upload diário</div>
+<div class="layout">
+<nav class="sidebar">
+  <div class="tab active" data-tab="inicio">🏠 Dashboard</div>
+  <div class="sidebarGroup">Bem-estar & carga</div>
+  <div class="tab" data-tab="wellness">🩺 Wellness</div>
+  <div class="tab" data-tab="pse">💪 PSE</div>
+  <div class="tab" data-tab="acwr">📈 ACWR</div>
+  <div class="sidebarGroup">Planeamento</div>
+  <div class="tab" data-tab="planeamento">🎯 Planeamento Individual</div>
+  <div class="tab" data-tab="equipa">👥 Targets Coletivos</div>
+  <div class="tab" data-tab="velocidade">🏃 Velocidade Máxima</div>
+  <div class="sidebarGroup">Calendário</div>
+  <div class="tab" data-tab="calendario">📅 Calendário</div>
+  <div class="sidebarGroup">Benchmark</div>
+  <div class="tab" data-tab="benchmark">⚽ Benchmark de jogo</div>
+  <div class="sidebarGroup">Gráficos</div>
+  <div class="tab" data-tab="progressao">📊 Gráficos</div>
+  <div class="sidebarGroup">Restantes</div>
+  <div class="tab" data-tab="tecnico">🧮 Dados técnicos</div>
+  <div class="tab" data-tab="history">🗂️ Histórico</div>
+  <div class="tab" data-tab="upload">⬆️ Upload diário</div>
+</nav>
+<div class="mainContent">
+
+<div class="panel active" id="panel-inicio">
+  <div id="homeAlertsBox"></div>
+  <div id="homeUploadLink"></div>
+</div>
+
+<div class="panel" id="panel-calendario">
+  <div class="note">Arrasta qualquer dia para outra data (na grelha abaixo) para trocar o conteúdo dos dois — funciona tanto aqui como no calendário do Dashboard, e fica sempre sincronizado entre os dois.</div>
+  <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">
+    <div style="flex:1;min-width:280px;">
+      <div id="calWeeksGrid"></div>
+    </div>
+    <div style="flex:0 0 300px;width:300px;">
+      <div class="card">
+        <h3>Adicionar/editar um dia</h3>
+        <label>Data</label>
+        <input type="date" id="calDayDate">
+        <label>Tipo de dia</label>
+        <select id="calDayType"></select>
+        <label>Nota (opcional — ex: nome do adversário/jornada)</label>
+        <div class="desc" style="margin-bottom:6px;">Se o tipo for "Jornada (jogo)", escreve aqui "Jornada X vs Adversário" para jogo oficial, ou "JP vs Adversário" para amigável — o Benchmark de jogo usa este texto para separar os dois.</div>
+        <input type="text" id="calDayNote" placeholder="ex: Jornada 1 vs Vitória B">
+        <button onclick="saveCalendarDay()">Guardar dia</button>
+        <button class="secondary" onclick="deleteCalendarDay()">Apagar este dia</button>
+        <div id="calDayStatus"></div>
+      </div>
+      <div class="card">
+        <h3>Preencher intervalo de datas</h3>
+        <div class="desc">Aplica o mesmo padrão semanal (Seg a Dom) a todas as semanas entre as duas datas — atalho para montar um ciclo inteiro sem clicar dia a dia. Dias já existentes nesse intervalo são substituídos.</div>
+        <label>De</label>
+        <input type="date" id="calRangeStart">
+        <label>Até</label>
+        <input type="date" id="calRangeEnd">
+        <div id="calWeekdayGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px;"></div>
+        <button onclick="fillCalendarRange()">Preencher intervalo</button>
+        <div id="calRangeStatus"></div>
+      </div>
+      <div class="note">Cria ou edita o calendário do clube diretamente aqui, dia a dia ou por intervalo de datas — sem precisar de importar sempre o mesmo ficheiro. Os dias criados aqui usam as mesmas percentagens por defeito da aba Equipa (editáveis lá depois, célula a célula).</div>
+    </div>
+  </div>
 </div>
 
 <div class="panel" id="panel-upload">
   <div class="note">Os ficheiros de wellness, PSE e GPS podem conter <b>vários dias de uma vez</b> — a data de cada registo é lida diretamente do ficheiro (coluna de data/hora), não precisas de carregar dia a dia. Ficheiros repetidos com dias sobrepostos simplesmente atualizam esses dias.</div>
   <div class="card">
-    <label>Data (só para a sessão de treino manual, nº 4)</label>
-    <input type="date" id="dataInput">
-  </div>
-  <div class="card">
-    <h3>0. Atualização automática (Google Sheets)</h3>
+    <h3>1. Atualização automática (Google Sheets)</h3>
     <div class="desc">Cola aqui os links CSV publicados das folhas de wellness e PSE (Google Sheets → Ficheiro → Partilhar → Publicar no Web → escolhe a folha → formato CSV → Publicar). Depois de colados uma vez, ficam guardados neste browser — só precisas de carregar em "Atualizar agora" sempre que quiseres puxar os dados mais recentes.</div>
     <label>Link CSV — Wellness (questionário matinal)</label>
     <input type="text" id="wellnessSheetUrl" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv" value="https://docs.google.com/spreadsheets/d/e/2PACX-1vQQtfABnloKD9mc67ntiANxY9aL86pxQLmP2B_EgoNWzrSEbBwTsBSofpGf1f7IPfvdknuJ9SM6iiHZ/pub?output=csv">
@@ -115,36 +295,26 @@
     <div id="fetchSheetsStatus"></div>
   </div>
   <div class="card">
-    <h3>1. Planeamento semanal (calendário do clube)</h3>
-    <div class="desc">.csv ou .xlsx com duas colunas: <b>Data</b> e <b>Tipo</b> (texto livre, ex: "Folga", "Tensão", "Duração-", "Duração +", "Duração ++", "Duração +++", "Velocidade", "Ativação", "Recuperação", "Jornada X"). <b>Carrega isto primeiro</b> — os jogos detetados aqui são usados para marcar automaticamente as sessões de jogo quando carregares o GPS a seguir.</div>
-    <input type="file" id="roadmapFile" accept=".csv,.xlsx,.xls">
-    <button onclick="handleRoadmapUpload()">Processar e guardar</button>
-    <div id="roadmapStatus"></div>
-  </div>
-  <div class="card">
-    <h3>2. GPS (carga externa)</h3>
-    <div class="desc">.csv do Catapult (Player Name, Period Name, Distance, High Speed Distance, Sprint Distance, Accel + Decel Efforts). Pode ter várias sessões/dias — a data vem da coluna "Period Name". A duração daqui é usada a seguir para calcular o sRPE combinado com o PSE.</div>
-    <input type="file" id="gpsFile" accept=".csv">
-    <button onclick="handleGPS()">Processar e guardar</button>
-    <div id="gpsStatus"></div>
-  </div>
-  <div class="card">
-    <h3>3. PSE (esforço percebido pós-treino)</h3>
-    <div class="desc">.xlsx do Google Forms (Tipo de sessão, RPE 1-10). Pode ter um dia ou o histórico todo.</div>
-    <input type="file" id="pseFile" accept=".xlsx,.xls">
-    <button onclick="handlePSE()">Processar e guardar</button>
-    <div id="pseStatus"></div>
-  </div>
-  <div class="card">
-    <h3>4. Questionário matinal (wellness)</h3>
-    <div class="desc">.xlsx do Google Forms (Cansaço, Sono, Dores, Stress, Humor). Pode ter um dia ou o histórico todo — cada linha grava-se na sua própria data.</div>
-    <input type="file" id="wellnessFile" accept=".xlsx,.xls">
-    <button onclick="handleWellness()">Processar e guardar</button>
-    <div id="wellnessStatus"></div>
+    <h3>2. GPS automático (Catapult Connect API)</h3>
+    <div class="desc">Vai buscar os dados diretamente à tua conta Catapult (Europa). O token fica guardado só neste browser (localStorage), nunca é enviado para a base de dados partilhada.</div>
+    <label>Token da Catapult (API Token, scope "connect")</label>
+    <input type="password" id="catapultTokenInput" placeholder="cola aqui o token">
+    <button class="secondary" onclick="saveCatapultToken()">Guardar token</button>
+    <label style="margin-top:10px;">Data da sessão</label>
+    <input type="date" id="catapultDate">
+    <button onclick="catapultListActivities()">Procurar sessões desta data</button>
+    <div id="catapultActivityBox" style="display:none;margin-top:10px;">
+      <label>Sessão encontrada</label>
+      <select id="catapultActivitySelect"></select>
+      <button onclick="catapultImportActivity()">Importar GPS desta sessão</button>
+    </div>
+    <div class="desc" style="margin-top:12px;">Ou importa tudo de uma vez: procura todas as sessões da conta Catapult desde o início da época e importa as que ainda não tens. Dias que já tenham dados de GPS são ignorados automaticamente (não duplica).</div>
+    <button class="secondary" onclick="catapultImportAllHistory()">Importar todo o histórico disponível</button>
+    <div id="catapultStatus"></div>
   </div>
 
   <div class="card">
-    <h3>5. Ficheiro de treino (PDF)</h3>
+    <h3>3. Ficheiro de treino (PDF)</h3>
     <div class="desc">Extrai o texto do PDF e tenta somar as durações automaticamente (procura números antes de "(total)"/"(Total)"). <b>A extração de PDF é frágil</b> — confirma sempre o resultado antes de gravar.</div>
     <input type="file" id="pdfFile" accept=".pdf">
     <label>Data da sessão</label>
@@ -161,19 +331,54 @@
   </div>
 </div>
 
-<div class="panel active" id="panel-hoje">
-  <div class="note" id="dashSubline">A carregar...</div>
+<div class="panel" id="panel-acwr">
+  <div class="note keeptop" id="dashSubline">A carregar...</div>
   <button class="secondary" onclick="loadDashboard()">Atualizar</button>
   <div id="dashGroups" style="margin-top:16px;"></div>
+  <div class="note">ACWR principal = <b>métrica combinada</b>: mistura o ACWR de sRPE (RPE × duração da sessão — a definição original de Gabbett 2016) com o ACWR de Distância total (alternativa validada na literatura). Quando ambos existem para um jogador, a métrica combinada é a média dos dois rácios; quando só um existe (falta duração fiável nalguns dias, por exemplo), usa-se só esse — sempre identificado em cada cartão qual foi usado. Dados de dor, bem-estar, PSE e velocidade têm abas próprias.</div>
+</div>
+
+<div class="panel" id="panel-wellness">
+  <div class="note keeptop" id="wellSubline">A carregar...</div>
+  <button class="secondary" onclick="loadWellness()">Atualizar</button>
+  <label style="display:inline-block;margin:10px 8px 0 0;">Data</label>
+  <input type="date" id="wellPdfDate" style="display:inline-block;width:auto;margin:10px 8px 0 0;">
+  <button class="secondary" onclick="exportWellnessPdf()">📄 Exportar PDF do dia</button>
+  <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-top:16px;">
+    <div style="flex:1;min-width:280px;">
+      <div id="wellGroups"></div>
+    </div>
+    <div style="flex:0 0 300px;width:300px;">
+      <div id="wellInjurySidebar"></div>
+    </div>
+  </div>
+</div>
+
+<div class="panel" id="panel-pse">
+  <div class="note keeptop" id="pseSubline">A carregar...</div>
+  <button class="secondary" onclick="loadPseTab()">Atualizar</button>
+  <div id="pseGroups" style="margin-top:16px;"></div>
+</div>
+
+<div class="panel" id="panel-velocidade">
+  <div class="note keeptop" id="velSubline">A carregar...</div>
+  <button class="secondary" onclick="loadVelocidade()">Atualizar</button>
+  <table id="velTable" style="margin-top:16px;">
+    <thead><tr><th>Jogador</th><th>Recorde</th><th>Data do recorde</th><th>Última vez ≥90%</th><th>Há quanto tempo</th></tr></thead>
+    <tbody></tbody>
+  </table>
 </div>
 
 <div class="panel" id="panel-planeamento">
   <div class="note">Alvo numérico automático por jogador, para qualquer dia do calendário do clube (não só amanhã) — calculado a partir da carga crónica (28 dias) até hoje × o tipo de dia (MD-5 a MD). <b>"Alvo"</b> é o valor em bruto (crónica×%); <b>"Reajustado"</b> é esse valor corrigido pelo desvio acumulado do ciclo — quando não há ajuste, mostra "= alvo". <b>Desvio</b>: quanto esse jogador está atrás (amarelo, ↓) ou à frente (cinza, ↑) do plano nessa variável, acumulado desde o início do ciclo — verde quando está praticamente em linha (menos de 5%).</div>
   <label>Dia</label>
   <select id="dayPicker"></select>
-  <div id="planInfo" class="note"></div>
+  <div id="planInfo" class="note keeptop"></div>
   <table id="planTable">
-    <thead><tr><th>Jogador</th><th>Distância alvo</th><th>Distância reajustada</th><th>Desvio (ciclo)</th><th>HSR alvo</th><th>HSR reajustado</th><th>Desvio (ciclo)</th><th>Sprint alvo</th><th>Sprint reajustado</th><th>Desvio (ciclo)</th><th>Acc/Dec alvo</th><th>Acc/Dec reajustado</th><th>Desvio (ciclo)</th></tr></thead>
+    <thead>
+      <tr><th></th><th colspan="4" style="text-align:center;background:rgba(94,163,255,0.15);">Distância</th><th colspan="4" style="text-align:center;background:rgba(63,174,106,0.15);">HSR</th><th colspan="4" style="text-align:center;background:rgba(230,180,60,0.15);">Sprint</th><th colspan="4" style="text-align:center;background:rgba(230,90,90,0.15);">Acc/Dec</th></tr>
+      <tr><th>Jogador</th><th>alvo</th><th>reajustado</th><th>real</th><th>desvio</th><th>alvo</th><th>reajustado</th><th>real</th><th>desvio</th><th>alvo</th><th>reajustado</th><th>real</th><th>desvio</th><th>alvo</th><th>reajustado</th><th>real</th><th>desvio</th></tr>
+    </thead>
     <tbody></tbody>
   </table>
 </div>
@@ -181,12 +386,10 @@
 <div class="panel" id="panel-benchmark">
   <div class="note"><b>Premier League:</b> dados de estudos científicos recentes sobre a liga (2015-2025), por 90 min, jogador de campo. <b>Liga 3 (ajustado):</b> a Liga 3 portuguesa é um campeonato <b>profissional</b> (desde 2021), apesar de ser a 3ª divisão — por isso o fosso face à Premier League é bem menor do que seria para uma liga amadora. Não existe estudo publicado específico da Liga 3, por isso é uma estimativa minha, aplicando: distância ×0.92, Acc/Dec ×0.85 (variáveis ligadas ao volume/trabalho, onde o fosso entre profissionais é pequeno), HSR ×0.78 e sprint ×0.65 (variáveis mais dependentes de recursos de staff, preparação física e qualidade atlética de topo, onde o fosso continua a existir mesmo entre ligas profissionais). <b>Trata isto como uma referência de trabalho, não um valor validado</b> — calibra com dados reais de adversários da Liga 3 assim que tiveres.</div>
   <div class="note" style="border-color:rgba(63,174,106,0.4)"><b>"SC Vianense real" conta só jogos oficiais (Jornada X)</b> — amigáveis (JP1, JP2, etc.) não entram neste benchmark, porque não representam bem a intensidade de competição. São identificados automaticamente pelo texto do calendário ("Jornada" = oficial).</div>
-  <h2>Geral</h2>
   <table id="benchTable">
     <thead><tr><th>Variável</th><th>Premier League</th><th>Liga 3 (ajustado)</th><th>SC Vianense (real, jogos)</th><th>% do PL</th><th>% da Liga 3</th></tr></thead>
     <tbody></tbody>
   </table>
-  <h2>Por posição</h2>
   <div class="note">Posição capturada automaticamente do ficheiro de GPS (coluna "Posição" ou "Position": DC, LAT, MC, EXT, AC). Sprint calibrado a 25,2km/h (padrão UEFA/FIFA); Acc/Dec calibrado a 2 m/s² (limiar confirmado do teu Catapult).</div>
   <table id="posBenchTable">
     <thead><tr><th>Posição</th><th>Variável</th><th>Premier League</th><th>Liga 3 (ajustado)</th><th>SC Vianense (real, jogos)</th><th>% do PL</th><th>% da Liga 3</th></tr></thead>
@@ -206,32 +409,16 @@
 <div class="panel" id="panel-progressao">
   <div class="note">Evolução ao longo do tempo — nº de jogadores dentro do sweet spot, ACWR médio da equipa (com a banda do sweet spot marcada no gráfico) e carga real de jogo, para perceber que ritmo de progressão é realista para a equipa como um todo.</div>
   <button class="secondary" onclick="loadProgressao()">Atualizar</button>
-  <h2>Jogadores em sweet spot ao longo do tempo</h2>
   <canvas id="chartCount" height="90"></canvas>
-  <h2>ACWR médio da equipa ao longo do tempo (com banda do sweet spot)</h2>
   <canvas id="chartSweetSpot" height="90"></canvas>
-  <h2>Resumo do último ciclo completo (soma por tipo de dia vs. literatura)</h2>
-  <div class="note">Soma real da equipa por tipo de dia no ciclo mais recente já terminado (desde a última Folga/Jornada até à seguinte). A literatura (Akenhead et al.; Los Arcos et al.; Clemente et al., La Liga) diz que o <b>pico deve estar no MD-3/MD-4</b>, e que <b>MD-2 e MD-1 devem descer progressivamente (tapering)</b> — aqui vês se o padrão real da equipa bate certo com isso.</div>
-  <button class="secondary" onclick="loadCycleSummary()">Atualizar</button>
-  <div id="cycleSummaryInfo" class="note"></div>
-  <table id="cycleSummaryTable">
-    <thead><tr><th>Tipo de dia</th><th>Distância (soma equipa)</th><th>HSR</th><th>Sprint</th><th>Acc/Dec</th><th>Padrão esperado</th></tr></thead>
-    <tbody></tbody>
-  </table>
-
-  <h2>Evolução da distância crónica da equipa (base de 28 dias)</h2>
   <div class="note">Linhas de referência: <b>Premier League ~3980 m/dia</b> (estudo científico sobre ligas profissionais holandesa/inglesa, Rathke et al., Frontiers 2020 — carga crónica "alta" de 111.500m/28 dias); <b>Liga 3 ~3660 m/dia</b> (estimativa minha, aplicando o mesmo fator profissional ×0.92 usado no resto dos benchmarks — não há estudo publicado específico).</div>
   <canvas id="chartChronic" height="90"></canvas>
-  <h2>Carga real de jogo (distância) ao longo da época</h2>
   <canvas id="chartJogos" height="90"></canvas>
-  <h2>Carga real de jogo (HSR) ao longo da época</h2>
   <canvas id="chartJogosHSR" height="90"></canvas>
-  <h2>Carga real de jogo (Sprint/VHSR) ao longo da época</h2>
   <canvas id="chartJogosSprint" height="90"></canvas>
 </div>
 
 <div class="panel" id="panel-equipa">
-  <h2>Roteiro coletivo (calendário do clube)</h2>
   <div class="note"><b>Percentagens relativas à carga crónica de treino individual de cada jogador — nunca ao benchmark.</b> <b>Porque é que o jogo aparece tão alto (200%+)?</b> Um jogo de 90 minutos em competição é sempre muito mais exigente do que qualquer treino normal — é suposto e correto ser 2x a 2.5x a carga diária de treino, não é um erro nem uma meta a atingir num dia de treino. Por isso mostramos o dia de jogo em separado, não como percentagem comparável às restantes linhas.</div>
   <div class="note" style="border-color:rgba(63,174,106,0.4)">As percentagens começam como estimativas (ajustadas para refletir que a carga crónica é sempre mais baixa do que um dia de treino ativo, e que Acc/Dec é sempre mais alto em dias de Tensão). <b>Edita diretamente os números de qualquer dia na tabela abaixo</b> — cada célula é editável; muda e sai do campo (Tab ou clicar fora) para gravar automaticamente, só nesse dia específico.</div>
   <button class="secondary" onclick="calibrateDayProfiles()">Calibrar percentagens com dados reais</button>
@@ -254,6 +441,14 @@
     <tbody></tbody>
   </table>
   </div>
+
+  <div class="note">Soma real da equipa por tipo de dia no ciclo mais recente já terminado (desde a última Folga/Jornada até à seguinte). A literatura (Akenhead et al.; Los Arcos et al.; Clemente et al., La Liga) diz que o <b>pico deve estar no MD-3/MD-4</b>, e que <b>MD-2 e MD-1 devem descer progressivamente (tapering)</b> — aqui vês se o padrão real da equipa bate certo com isso.</div>
+  <button class="secondary" onclick="loadCycleSummary()">Atualizar</button>
+  <div id="cycleSummaryInfo" class="note keeptop"></div>
+  <table id="cycleSummaryTable">
+    <thead><tr><th>Tipo de dia</th><th>Distância (soma equipa)</th><th>HSR</th><th>Sprint</th><th>Acc/Dec</th><th>Padrão esperado</th></tr></thead>
+    <tbody></tbody>
+  </table>
 </div>
 
 <div class="panel" id="panel-history">
@@ -273,9 +468,12 @@
   </table>
 </div>
 
+</div>
+</div>
+
 <script>
 const CANONICAL = ["Alieson Kamara","Bruno Silva","Diogo Maga","Diogo Rashid","Dionísio Mendonça",
-"Eduardo Aguiar","Gabriel Faria","Hamed Doukouré","Henrique Brito","Joaquim Marques",
+"Eduardo Aguiar","Gabriel Faria","Gonçalo Rolo","Hamed Doukouré","Henrique Brito","Joaquim Marques",
 "João Castro","João Faria","Khalid Hachadi","Laércio Morais","Lowen Nsonga",
 "Moisés Conceição","Pedro Soares","Reko Silva","Sekou Diancoumba","Yuri Pierre"];
 const ALIAS = {
@@ -311,6 +509,20 @@ function norm(s){
     .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
     .replace(/\s+/g,' ');
 }
+// O Google Forms exporta a localiza\u00e7\u00e3o da dor como "15 \u2013 Tend\u00e3o de aquiles E" (o "15" \u00e9 s\u00f3 o
+// n\u00famero interno da op\u00e7\u00e3o na lista do formul\u00e1rio, n\u00e3o tem nenhum significado cl\u00ednico) -- isto
+// tira esse prefixo para a informa\u00e7\u00e3o mostrada nunca parecer uma segunda escala a confundir com o
+// grau de dor (que \u00e9 sempre a parte "(x/10)" ao lado).
+function cleanPainLabel(s){
+  return (s||'').toString().replace(/^\s*\d+\s*[\u2013\-]\s*/, '').trim();
+}
+function severityWord(grau){
+  const g = Number(grau);
+  if(!g) return '';
+  if(g>=7) return 'forte';
+  if(g>=4) return 'moderada';
+  return 'ligeira';
+}
 // Mapa de aliases re-indexado por chave normalizada (sem acentos), construído uma vez a partir do ALIAS acima.
 const ALIAS_NORM = {};
 for(const k in ALIAS){ ALIAS_NORM[norm(k)] = ALIAS[k]; }
@@ -343,7 +555,6 @@ async function getRefDate(){
   if(valid.length===0) return todayStr();
   return valid.sort().slice(-1)[0];
 }
-document.getElementById('dataInput').value = todayStr();
 document.getElementById('pdfDataInput').value = todayStr();
 
 const BASE_ROADMAP = [{"data": "2026-07-01", "md": "MD-10", "label": "Duração-"}, {"data": "2026-07-02", "md": "MD-9", "label": "Duração-"}, {"data": "2026-07-03", "md": "MD-8", "label": "Duração-"}, {"data": "2026-07-04", "md": "MD-7", "label": "Tensão"}, {"data": "2026-07-05", "md": "MD-6", "label": "Folga"}, {"data": "2026-07-06", "md": "MD-5", "label": "Duração-"}, {"data": "2026-07-07", "md": "MD-4", "label": "Tensão"}, {"data": "2026-07-08", "md": "MD-3", "label": "Duração +"}, {"data": "2026-07-09", "md": "MD-2", "label": "Velocidade"}, {"data": "2026-07-10", "md": "MD-1", "label": "Ativação"}, {"data": "2026-07-11", "md": "MD", "label": "JP1-Vitoria B (F)"}, {"data": "2026-07-12", "md": "MD-3", "label": "Folga"}, {"data": "2026-07-13", "md": "MD-2", "label": "Duração-"}, {"data": "2026-07-14", "md": "MD-1", "label": "Tensão"}, {"data": "2026-07-15", "md": "MD", "label": "JP2 - Gil Vicente (F) 10h30"}, {"data": "2026-07-16", "md": "MD-2", "label": "Recuperaçao"}, {"data": "2026-07-17", "md": "MD-1", "label": "Ativação"}, {"data": "2026-07-18", "md": "MD", "label": "JP3-Braga S23 (F)"}, {"data": "2026-07-19", "md": "MD-3", "label": "Folga"}, {"data": "2026-07-20", "md": "MD-2", "label": "Folga"}, {"data": "2026-07-21", "md": "MD-1", "label": "Tensão"}, {"data": "2026-07-22", "md": "MD", "label": "JP4 - Naval 10h00"}, {"data": "2026-07-23", "md": "MD-2", "label": "Velocidade"}, {"data": "2026-07-24", "md": "MD-1", "label": "Ativação"}, {"data": "2026-07-25", "md": "MD", "label": "JP5 - Marco (F)"}, {"data": "2026-07-26", "md": "MD-3", "label": "Folga"}, {"data": "2026-07-27", "md": "MD-2", "label": "Recuperação"}, {"data": "2026-07-28", "md": "MD-1", "label": "Duração-"}, {"data": "2026-07-29", "md": "MD", "label": "JP6 - AFS 10h30 (F)"}, {"data": "2026-07-30", "md": "MD-2", "label": "Duração--"}, {"data": "2026-07-31", "md": "MD-1", "label": "Velocidade"}, {"data": "2026-08-01", "md": "MD", "label": "JP7-Limianos (C) 10h30"}, {"data": "2026-08-02", "md": "MD-7", "label": "Folga"}, {"data": "2026-08-03", "md": "MD-6", "label": "Folga"}, {"data": "2026-08-04", "md": "MD-5", "label": "Tensão"}, {"data": "2026-08-05", "md": "MD-4", "label": "Duração-"}, {"data": "2026-08-06", "md": "MD-3", "label": "Duração ++"}, {"data": "2026-08-07", "md": "MD-2", "label": "Velocidade"}, {"data": "2026-08-08", "md": "MD-1", "label": "Ativação"}, {"data": "2026-08-09", "md": "MD", "label": "Jornada 1"}, {"data": "2026-08-10", "md": "MD-5", "label": "Folga"}, {"data": "2026-08-11", "md": "MD-4", "label": "Tensão"}, {"data": "2026-08-12", "md": "MD-3", "label": "Duração ++"}, {"data": "2026-08-13", "md": "MD-2", "label": "Velocidade"}, {"data": "2026-08-14", "md": "MD-1", "label": "Ativação"}, {"data": "2026-08-15", "md": "MD", "label": "Jornada 2"}, {"data": "2026-08-16", "md": "MD-7", "label": "Folga"}, {"data": "2026-08-17", "md": "MD-6", "label": "Folga"}, {"data": "2026-08-18", "md": "MD-5", "label": "Tensão"}, {"data": "2026-08-19", "md": "MD-4", "label": "Duração-"}, {"data": "2026-08-20", "md": "MD-3", "label": "Duração ++"}, {"data": "2026-08-21", "md": "MD-2", "label": "Velocidade"}, {"data": "2026-08-22", "md": "MD-1", "label": "Ativação"}, {"data": "2026-08-23", "md": "MD", "label": "Jornada 3"}];
@@ -534,32 +745,83 @@ async function fetchAllSheets(){
   if(p) document.getElementById('pseSheetUrl').value = p;
 })();
 
-// --- Nome da equipa / época, editáveis no título ---
-function renderTitle(){
-  const name = localStorage.getItem('team_name') || 'SC Vianense';
-  const season = localStorage.getItem('team_season') || '';
-  document.getElementById('mainTitle').textContent = name + ' — Performance OS' + (season ? ` (${season})` : '');
+// --- Épocas (seasons), geridas no canto superior direito ---
+// Cada época é só {id, year, club} -- um rótulo mostrado no dropdown do cabeçalho. Trocar de
+// época NÃO filtra os dados (GPS, calendário, wellness, etc. continuam globais nesta versão);
+// serve para o clube ter um sítio central para nomear/organizar épocas, à espera de uma futura
+// separação de dados por época se vier a ser precisa.
+function getSeasons(){
+  try{
+    const s = JSON.parse(localStorage.getItem('app_seasons')||'null');
+    if(Array.isArray(s) && s.length) return s;
+  }catch(e){}
+  // migração automática a partir do sistema antigo (nome de equipa + época únicos)
+  const club = localStorage.getItem('team_name') || 'SC Vianense SAD';
+  const year = localStorage.getItem('team_season') || '2026/2027';
+  const seasons = [{id:'s1', year, club}];
+  localStorage.setItem('app_seasons', JSON.stringify(seasons));
+  return seasons;
 }
-function editTitle(){
-  document.getElementById('teamNameInput').value = localStorage.getItem('team_name') || 'SC Vianense';
-  document.getElementById('teamSeasonInput').value = localStorage.getItem('team_season') || '';
-  document.getElementById('titleEditBox').style.display = 'block';
+function saveSeasons(seasons){ localStorage.setItem('app_seasons', JSON.stringify(seasons)); }
+function getActiveSeasonId(){
+  const seasons = getSeasons();
+  let id = localStorage.getItem('app_active_season');
+  if(!id || !seasons.find(s=>s.id===id)) id = seasons[seasons.length-1].id;
+  return id;
 }
-function cancelEditTitle(){
-  document.getElementById('titleEditBox').style.display = 'none';
+function renderSeasonSwitcher(){
+  const seasons = getSeasons();
+  const activeId = getActiveSeasonId();
+  const sel = document.getElementById('seasonSelect');
+  sel.innerHTML = seasons.map(s=>`<option value="${s.id}" ${s.id===activeId?'selected':''}>${s.year} — ${s.club}</option>`).join('');
+  const active = seasons.find(s=>s.id===activeId) || seasons[0];
+  document.title = `Performance2win — ${active.club} (${active.year})`;
+  document.getElementById('clubBadge').textContent = (active.club||'?').trim().charAt(0).toUpperCase() || '⚽';
 }
-function saveTitle(){
-  const name = document.getElementById('teamNameInput').value.trim() || 'SC Vianense';
-  const season = document.getElementById('teamSeasonInput').value.trim();
-  localStorage.setItem('team_name', name);
-  localStorage.setItem('team_season', season);
-  document.getElementById('titleEditBox').style.display = 'none';
-  renderTitle();
+function switchSeason(id){
+  localStorage.setItem('app_active_season', id);
+  renderSeasonSwitcher();
 }
-renderTitle();
+function addSeason(){
+  const seasons = getSeasons();
+  const lastYear = seasons[seasons.length-1].year;
+  const nextYearGuess = lastYear.replace(/(\d{4})\/(\d{4})/, (m,a,b)=> (Number(a)+1)+'/'+(Number(b)+1));
+  const year = prompt('Nova época (ex: 2027/2028):', nextYearGuess!==lastYear ? nextYearGuess : '');
+  if(!year || !year.trim()) return;
+  const club = prompt('Nome do clube:', seasons[seasons.length-1].club || 'SC Vianense SAD');
+  if(club==null) return;
+  const id = 's' + Date.now();
+  seasons.push({id, year: year.trim(), club: (club.trim() || 'SC Vianense SAD')});
+  saveSeasons(seasons);
+  localStorage.setItem('app_active_season', id);
+  renderSeasonSwitcher();
+}
+function editSeason(){
+  const seasons = getSeasons();
+  const active = seasons.find(s=>s.id===getActiveSeasonId()) || seasons[0];
+  document.getElementById('seasonYearInput').value = active.year;
+  document.getElementById('seasonClubInput').value = active.club;
+  document.getElementById('seasonEditBox').style.display = 'block';
+}
+function cancelSeasonEdit(){
+  document.getElementById('seasonEditBox').style.display = 'none';
+}
+function saveSeasonEdit(){
+  const seasons = getSeasons();
+  const activeId = getActiveSeasonId();
+  const idx = seasons.findIndex(s=>s.id===activeId);
+  if(idx>=0){
+    seasons[idx].year = document.getElementById('seasonYearInput').value.trim() || seasons[idx].year;
+    seasons[idx].club = document.getElementById('seasonClubInput').value.trim() || seasons[idx].club;
+    saveSeasons(seasons);
+  }
+  document.getElementById('seasonEditBox').style.display = 'none';
+  renderSeasonSwitcher();
+}
+renderSeasonSwitcher();
 
 // --- Código de acesso (portão simples, não é segurança forte — ver nota no setup_supabase.sql) ---
-const PASSCODE_HASH = '5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5';
+const PASSCODE_HASH = 'd9b74937cc2a0edafa535b56a4903d99abc5d88ce51f111fc1c03df0a1d4fcd7'; // "vianense2026"
 async function sha256Hex(str){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
@@ -643,7 +905,7 @@ async function handleGPS(){
       const posIdx = colIdx['Posição']>=0 ? colIdx['Posição'] : colIdx['Position'];
       if(posIdx>=0 && r[posIdx]){
         const posRaw = r[posIdx].toString().trim().toUpperCase();
-        if(['DC','LAT','MC','EXT','AC'].includes(posRaw)) positions[player] = posRaw;
+        if(['GR','DC','LAT','MC','EXT','AC'].includes(posRaw)) positions[player] = posRaw;
       }
     }
     await setSeries('series_gps', series);
@@ -654,7 +916,7 @@ async function handleGPS(){
     const sessionsSeries = await getSeries('series_sessions');
     for(const d of datesSeen){
       const roadmapDay = ROADMAP.find(r=>r.data===d);
-      if(roadmapDay && classifyDayLabel(roadmapDay.label)==='JOGO' && !sessionsSeries[d]){
+      if(roadmapDay && dayTypeKey(roadmapDay)==='JOGO' && !sessionsSeries[d]){
         sessionsSeries[d] = {tipo:'Jogo', duracao:null, notas:`(detetado automaticamente do calendário: ${roadmapDay.label})`};
         autoGames++;
       }
@@ -663,6 +925,228 @@ async function handleGPS(){
     const posMsg = Object.keys(positions).length ? ` Posição capturada para ${Object.keys(positions).length} jogador(es).` : ' (sem coluna de posição neste ficheiro)';
     setStatus('gpsStatus', true, `Guardado: ${count} registos em ${datesSeen.size} dias diferentes (datas e duração lidas do próprio ficheiro).${autoGames>0 ? ` ${autoGames} dia(s) marcado(s) automaticamente como Jogo.` : ''}${posMsg}`);
   }catch(e){ setStatus('gpsStatus', false, 'Erro: ' + e.message); }
+}
+
+// ---------- Catapult Connect API (importação automática de GPS, alternativa ao CSV) ----------
+// Base Europa (EMEA), confirmada em docs.connect.catapultsports.com. O token de integração fica
+// só neste browser (localStorage) -- nunca é gravado no Supabase partilhado, porque é uma
+// credencial sensível da conta Catapult do clube.
+const CATAPULT_BASE = 'https://connect-eu.catapultsports.com/api/v6';
+// Nomes exatos (campo "name") dos parâmetros na conta Catapult do SC Vianense -> slug usado nos
+// pedidos a /stats. Confirmados diretamente com a API em 2026-08-07. Se a Catapult um dia mudar
+// os slugs internos, o mapeamento por nome no /parameters continua válido para os reencontrar.
+const CATAPULT_PARAMS = {
+  distancia: 'Distance',
+  hsr: 'High Speed Distance',
+  sprint: 'Sprint Distance',
+  acc_dec: 'Accel + Decel Efforts',
+  duracao: 'Duration',
+  maxVel: 'Max Velocity',
+};
+function getCatapultToken(){ return localStorage.getItem('catapultToken') || ''; }
+function saveCatapultToken(){
+  const t = document.getElementById('catapultTokenInput').value.trim();
+  if(!t){ setStatus('catapultStatus', false, 'Cola o token antes de guardar.'); return; }
+  localStorage.setItem('catapultToken', t);
+  setStatus('catapultStatus', true, 'Token guardado neste browser.');
+}
+(function initCatapultToken(){
+  const el = document.getElementById('catapultTokenInput');
+  if(el) el.value = getCatapultToken();
+  const dateEl = document.getElementById('catapultDate');
+  if(dateEl) dateEl.value = todayStr();
+})();
+// O browser não consegue chamar a Catapult diretamente (bloqueado por CORS quando o pedido vem
+// de outro site). Por isso passamos por uma Netlify Function própria (netlify/functions/catapult.js),
+// que corre no servidor do Netlify (sem CORS) e reencaminha o pedido com o token.
+async function catapultFetch(path, opts={}){
+  const token = getCatapultToken();
+  if(!token) throw new Error('Guarda primeiro o token da Catapult.');
+  const method = opts.method || 'GET';
+  const body = opts.body && typeof opts.body === 'string' ? JSON.parse(opts.body) : opts.body;
+  const res = await fetch('/.netlify/functions/catapult', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ token, path, method, body })
+  });
+  const text = await res.text();
+  let data; try{ data = JSON.parse(text); }catch(e){ data = text; }
+  if(!res.ok){
+    const msg = (data && data.error) ? data.error : (typeof data==='string' ? data.slice(0,200) : JSON.stringify(data).slice(0,200));
+    throw new Error(`HTTP ${res.status} — ${msg}`);
+  }
+  return data;
+}
+let catapultParamSlugCache = null;
+async function catapultParamSlug(exactName){
+  if(!catapultParamSlugCache){
+    const data = await catapultFetch('/parameters?page_size=2000');
+    catapultParamSlugCache = Array.isArray(data) ? data : (data.data||[]);
+  }
+  const hit = catapultParamSlugCache.find(p => (p.name||'').trim().toLowerCase() === exactName.toLowerCase());
+  return hit ? hit.slug : null;
+}
+async function catapultListActivities(){
+  const dateStr = document.getElementById('catapultDate').value;
+  const box = document.getElementById('catapultActivityBox');
+  if(!dateStr){ setStatus('catapultStatus', false, 'Escolhe uma data.'); return; }
+  setStatus('catapultStatus', true, 'A procurar sessões...');
+  box.style.display = 'none';
+  try{
+    const start = Math.floor(new Date(dateStr+'T00:00:00').getTime()/1000);
+    const end = Math.floor(new Date(dateStr+'T23:59:59').getTime()/1000);
+    const data = await catapultFetch(`/activities?start_time=${start}&end_time=${end}&page_size=50`);
+    const list = Array.isArray(data) ? data : (data.data||[]);
+    if(!list.length){ setStatus('catapultStatus', false, 'Nenhuma sessão encontrada nessa data na Catapult.'); return; }
+    const sel = document.getElementById('catapultActivitySelect');
+    sel.innerHTML = list.map(a=>{
+      const hora = new Date(a.start_time*1000).toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});
+      return `<option value="${a.id}">${a.name} — ${hora}</option>`;
+    }).join('');
+    box.style.display = 'block';
+    setStatus('catapultStatus', true, `${list.length} sessão(ões) encontrada(s). Escolhe a certa e importa.`);
+  }catch(e){ setStatus('catapultStatus', false, 'Erro a procurar sessões: ' + e.message); console.error(e); }
+}
+async function catapultImportActivity(){
+  const activityId = document.getElementById('catapultActivitySelect').value;
+  const dateStr = document.getElementById('catapultDate').value;
+  if(!activityId){ setStatus('catapultStatus', false, 'Escolhe uma sessão primeiro.'); return; }
+  setStatus('catapultStatus', true, 'A importar dados da Catapult...');
+  try{
+    const [slugDist, slugHsr, slugSprint, slugAcc, slugDur, slugVel] = await Promise.all(
+      Object.values(CATAPULT_PARAMS).map(catapultParamSlug)
+    );
+    const missing = Object.entries({distância:slugDist, hsr:slugHsr, sprint:slugSprint, 'acc+dec':slugAcc, duração:slugDur, 'vel. máxima':slugVel})
+      .filter(([,v])=>!v).map(([k])=>k);
+    if(missing.length){ setStatus('catapultStatus', false, `Não encontrei estes parâmetros na tua conta Catapult: ${missing.join(', ')}.`); return; }
+
+    const statsData = await catapultFetch('/stats', {
+      method:'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        filters: [{name:'activity_id', comparison:'=', values:[activityId]}],
+        group_by: ['athlete'],
+        parameters: [slugDist, slugHsr, slugSprint, slugAcc, slugDur, slugVel],
+        source: 'cached_stats',
+        requested_only: false
+      })
+    });
+    const rows = Array.isArray(statsData) ? statsData : (statsData.data||[]);
+    if(!rows.length){ setStatus('catapultStatus', false, 'A Catapult não devolveu estatísticas para esta sessão.'); return; }
+
+    const series = await getSeries('series_gps');
+    let count = 0; const unresolved = [];
+    for(const row of rows){
+      const rawName = row.athlete_name || [row.first_name,row.last_name].filter(Boolean).join(' ');
+      const player = resolveName(rawName);
+      if(!player){ unresolved.push(rawName); continue; }
+      if(!series[player]) series[player] = {};
+      series[player][dateStr] = {
+        distancia: row[slugDist]!=null ? Math.round(row[slugDist]) : 0,
+        hsr: row[slugHsr]!=null ? Math.round(row[slugHsr]) : 0,
+        sprint: row[slugSprint]!=null ? Math.round(row[slugSprint]) : 0,
+        acc_dec: row[slugAcc]!=null ? Math.round(row[slugAcc]) : 0,
+        duracao: row[slugDur]!=null ? Math.round(row[slugDur]/60) : 0, // segundos -> minutos
+        maxVel: row[slugVel]!=null ? row[slugVel] : 0,
+      };
+      count++;
+    }
+    await setSeries('series_gps', series);
+    let autoGames = 0;
+    const sessionsSeries = await getSeries('series_sessions');
+    const roadmapDay = ROADMAP.find(r=>r.data===dateStr);
+    if(roadmapDay && dayTypeKey(roadmapDay)==='JOGO' && !sessionsSeries[dateStr]){
+      sessionsSeries[dateStr] = {tipo:'Jogo', duracao:null, notas:`(detetado automaticamente do calendário: ${roadmapDay.label})`};
+      await setSeries('series_sessions', sessionsSeries);
+      autoGames = 1;
+    }
+    setStatus('catapultStatus', true, `Importado: ${count} jogador(es) em ${dateStr}.${unresolved.length?` Nomes não reconhecidos (confirma na lista de jogadores): ${unresolved.join(', ')}.`:''}${autoGames?' Dia marcado automaticamente como Jogo.':''}`);
+  }catch(e){ setStatus('catapultStatus', false, 'Erro a importar: ' + e.message); console.error(e); }
+}
+// Vai buscar TODAS as sessões disponíveis na conta Catapult (desde o início da época até hoje),
+// não só um dia de cada vez, e importa as que ainda faltam -- qualquer dia que já tenha dados de
+// GPS gravados é ignorado (não volta a pedir nem a sobrescrever), para nunca duplicar trabalho.
+async function catapultImportAllHistory(){
+  setStatus('catapultStatus', true, 'A procurar todas as sessões disponíveis na Catapult...');
+  try{
+    const seasonStart = (BASE_ROADMAP[0] && BASE_ROADMAP[0].data) ? BASE_ROADMAP[0].data : '2026-07-01';
+    const start = Math.floor(new Date(seasonStart+'T00:00:00').getTime()/1000);
+    const end = Math.floor(Date.now()/1000);
+    let allActivities = [], page = 1;
+    while(true){
+      const data = await catapultFetch(`/activities?start_time=${start}&end_time=${end}&page_size=100&page=${page}`);
+      const list = Array.isArray(data) ? data : (data.data||[]);
+      if(!list.length) break;
+      allActivities = allActivities.concat(list);
+      if(list.length<100) break;
+      page++;
+    }
+    if(!allActivities.length){ setStatus('catapultStatus', false, 'Nenhuma sessão encontrada na Catapult.'); return; }
+
+    const [slugDist, slugHsr, slugSprint, slugAcc, slugDur, slugVel] = await Promise.all(
+      Object.values(CATAPULT_PARAMS).map(catapultParamSlug)
+    );
+    const missing = Object.entries({distância:slugDist, hsr:slugHsr, sprint:slugSprint, 'acc+dec':slugAcc, duração:slugDur, 'vel. máxima':slugVel})
+      .filter(([,v])=>!v).map(([k])=>k);
+    if(missing.length){ setStatus('catapultStatus', false, `Não encontrei estes parâmetros na tua conta Catapult: ${missing.join(', ')}.`); return; }
+
+    const series = await getSeries('series_gps');
+    const sessionsSeries = await getSeries('series_sessions');
+    let importedDays = 0, skippedDays = 0, importedPlayers = 0, autoGames = 0;
+    const unresolvedAll = new Set();
+    let sessionsChanged = false;
+
+    for(const act of allActivities){
+      setStatus('catapultStatus', true, `A importar... (${importedDays + skippedDays + 1}/${allActivities.length})`);
+      const dateStr = toLocalISODate(new Date(act.start_time*1000));
+      // Duplicado: já há dados de GPS de qualquer jogador nesse dia -- ignora, não volta a pedir.
+      const alreadyHasData = Object.values(series).some(pd=>pd[dateStr]);
+      if(alreadyHasData){ skippedDays++; continue; }
+      let rows;
+      try{
+        const statsData = await catapultFetch('/stats', {
+          method:'POST',
+          body: JSON.stringify({
+            filters: [{name:'activity_id', comparison:'=', values:[act.id]}],
+            group_by: ['athlete'],
+            parameters: [slugDist, slugHsr, slugSprint, slugAcc, slugDur, slugVel],
+            source: 'cached_stats',
+            requested_only: false
+          })
+        });
+        rows = Array.isArray(statsData) ? statsData : (statsData.data||[]);
+      }catch(e){ continue; } // uma sessão a falhar não deve travar as restantes
+      if(!rows.length) continue;
+      let anyPlayer = false;
+      for(const row of rows){
+        const rawName = row.athlete_name || [row.first_name,row.last_name].filter(Boolean).join(' ');
+        const player = resolveName(rawName);
+        if(!player){ unresolvedAll.add(rawName); continue; }
+        if(!series[player]) series[player] = {};
+        series[player][dateStr] = {
+          distancia: row[slugDist]!=null ? Math.round(row[slugDist]) : 0,
+          hsr: row[slugHsr]!=null ? Math.round(row[slugHsr]) : 0,
+          sprint: row[slugSprint]!=null ? Math.round(row[slugSprint]) : 0,
+          acc_dec: row[slugAcc]!=null ? Math.round(row[slugAcc]) : 0,
+          duracao: row[slugDur]!=null ? Math.round(row[slugDur]/60) : 0,
+          maxVel: row[slugVel]!=null ? row[slugVel] : 0,
+        };
+        importedPlayers++;
+        anyPlayer = true;
+      }
+      if(anyPlayer){
+        importedDays++;
+        const roadmapDay = ROADMAP.find(r=>r.data===dateStr);
+        if(roadmapDay && dayTypeKey(roadmapDay)==='JOGO' && !sessionsSeries[dateStr]){
+          sessionsSeries[dateStr] = {tipo:'Jogo', duracao:null, notas:`(detetado automaticamente do calendário: ${roadmapDay.label})`};
+          autoGames++; sessionsChanged = true;
+        }
+      }
+    }
+    await setSeries('series_gps', series);
+    if(sessionsChanged) await setSeries('series_sessions', sessionsSeries);
+    setStatus('catapultStatus', true, `Concluído: ${importedDays} dia(s) novo(s) importado(s) (${importedPlayers} registo(s) de jogador). ${skippedDays} dia(s) ignorado(s) por já teres dados.${unresolvedAll.size?` Nomes não reconhecidos: ${[...unresolvedAll].join(', ')}.`:''}${autoGames?` ${autoGames} dia(s) marcado(s) automaticamente como Jogo.`:''}`);
+  }catch(e){ setStatus('catapultStatus', false, 'Erro a importar histórico: ' + e.message); console.error(e); }
 }
 
 // Confirma que uma string é uma data válida no formato AAAA-MM-DD (evita crashes quando
@@ -692,7 +1176,10 @@ async function computeAllMetrics(refDate){
   const gps = await getSeries('series_gps');
   const wellness = await getSeries('series_wellness');
   const pse = await getSeries('series_pse');
-  const allPlayers = new Set([...Object.keys(gps), ...Object.keys(wellness), ...Object.keys(pse)]);
+  // Inclui sempre todo o plantel (CANONICAL), mesmo jogadores sem qualquer registo ainda (ex.
+  // guarda-redes sem GPS) -- caso contrário ficavam completamente invisíveis em todas as abas até
+  // terem o primeiro dado carregado.
+  const allPlayers = new Set([...CANONICAL, ...Object.keys(gps), ...Object.keys(wellness), ...Object.keys(pse)]);
   const out = {};
   for(const player of allPlayers){
     const entry = {name:player, hasGPS: !!gps[player]};
@@ -745,6 +1232,16 @@ async function computeAllMetrics(refDate){
         const std = Math.sqrt(scores.reduce((a,b)=>a+(b-mean)**2,0)/scores.length) || 0.01;
         entry.wellToday = scores[scores.length-1];
         entry.wellZ = Math.round(((entry.wellToday-mean)/std)*100)/100;
+        // Média histórica de cada parâmetro (cansaço/sono/dor/stress/humor) individualmente,
+        // para poder dizer em linguagem simples QUAL parâmetro está pior (não só um z-score
+        // agregado que ninguém sabe interpretar).
+        const fieldAvgs = {};
+        for(const f of ['cansaco','sono','dor','stress','humor']){
+          const vals = dates.slice(0,-1).map(d=>wellness[player][d][f]).filter(v=>v!=null && !isNaN(v));
+          fieldAvgs[f] = vals.length ? Math.round((vals.reduce((a,b)=>a+b,0)/vals.length)*10)/10 : null;
+        }
+        entry.wellFieldAvgs = fieldAvgs;
+        entry.wellTodayFields = wellness[player][dates[dates.length-1]];
       }
     }
     let pain = null;
@@ -753,12 +1250,12 @@ async function computeAllMetrics(refDate){
         const dates = Object.keys(src[player]).sort();
         for(let i=dates.length-1;i>=0;i--){
           const rec = src[player][dates[i]];
-          const parts = [];
-          if(rec.painLocal) parts.push(rec.painLocal + (rec.painGrau?` (${rec.painGrau}/10)`:''));
-          if(rec.painOutra) parts.push(rec.painOutra + (rec.painOutraGrau?` (${rec.painOutraGrau}/10)`:''));
+          const parts = []; let maxGrau = 0;
+          if(rec.painLocal){ const g=rec.painGrau; parts.push(`${cleanPainLabel(rec.painLocal)}${g?` — ${severityWord(g)} (${g}/10)`:''}`); if(g) maxGrau = Math.max(maxGrau, +g); }
+          if(rec.painOutra){ const g=rec.painOutraGrau; parts.push(`${cleanPainLabel(rec.painOutra)}${g?` — ${severityWord(g)} (${g}/10)`:''}`); if(g) maxGrau = Math.max(maxGrau, +g); }
           if(parts.length){
             const daysAgo = Math.round((new Date(refDate)-new Date(dates[i]))/86400000);
-            if(!pain || daysAgo < pain.daysAgo) pain = {desc:parts.join('; '), daysAgo};
+            if(!pain || daysAgo < pain.daysAgo) pain = {desc:parts.join('; '), daysAgo, maxGrau, date:dates[i]};
             break;
           }
         }
@@ -795,6 +1292,7 @@ async function computeAllMetrics(refDate){
   // reflete a carga de referência, não só os alvos da aba Planeamento.
   for(const player in out){
     const entry = out[player];
+    if(entry.injured) continue; // sem ACWR/combined para jogadores lesionados -- não faz sentido, não estão a treinar
     const srpeRatio = entry.srpe ? entry.srpe.ratio : null;
     const distRatio = (entry.multimetric && entry.multimetric.distancia) ? entry.multimetric.distancia.ratio : null;
     if(srpeRatio!=null && distRatio!=null){
@@ -830,10 +1328,21 @@ async function applyRampOverrides(out, gps, refDate){
     return Object.keys(gps[player]).filter(d => d>=sinceDate && d<=refDate).length;
   }
 
+  // Jogadores marcados como LESIONADO não entram em rampa nenhuma -- não estão a treinar, por
+  // isso não faz sentido calcular ACWR/sweet spot para eles. Ficam só marcados como "injured",
+  // para as outras funções (classifyPlayers, tabelas) os excluírem dos cálculos/alertas.
+  for(const player in playerStatus){
+    const st = playerStatus[player];
+    if(st && st.status==='LESIONADO' && out[player]){
+      out[player].injured = true;
+      out[player].injuredSince = st.inicio;
+    }
+  }
+
   const activeRamps = {};
   for(const player in playerStatus){
     const st = playerStatus[player];
-    if(!st || !st.status) continue;
+    if(!st || !st.status || st.status==='LESIONADO') continue;
     const sessoesAlvo = st.sessoesAlvo || RAMP_SESSOES_DEFAULT;
     const sessionsDone = sessionsSince(player, st.inicio);
     if(sessionsDone >= sessoesAlvo) continue; // rampa já concluída -- usa a crónica própria normal
@@ -894,6 +1403,77 @@ async function applyRampOverrides(out, gps, refDate){
   }
 }
 
+// Classificação partilhada por ACWR + bem-estar + dor de hoje -- usada pela aba ACWR e pelo
+// resumo da Início. Dor só sobe o nível de alerta quando reportada NO PRÓPRIO DIA (dia de
+// referência), escalando com o grau (0-10): >=7 conta como "falar", 4-6 como "vigiar".
+function classifyPlayers(metrics, refDate){
+  const results = [];
+  for(const player in metrics){
+    const m = metrics[player];
+    if(m.injured) continue; // lesionado: sem dados de treino, não faz sentido mostrar alertas de ACWR
+    let level = 0; const reasons = [];
+    if(!m.hasGPS){
+      results.push({name:player, level:-1, label:'Sem GPS (provável guarda-redes)', reasons:['Este jogador nunca teve registos de GPS carregados — se for guarda-redes, é esperado e não precisa de sweet spot.'], pain:m.pain, progression:null, wellZ:m.wellZ});
+      continue;
+    }
+    const ss = m.combined;
+    const ssName = ss ? ss.source : null;
+    const shortHistory = (m.nSessions28||0) < 10;
+    let progression = null;
+    if(ss){
+      if(ss.ratio>1.5){
+        level=2;
+        reasons.push(`ACWR: carga muito acima do normal esta semana — fora da banda do sweet spot.`);
+        progression = `<b>Reduzir a exposição de hoje/amanhã, dentro do mesmo treino de grupo:</b> sair mais cedo (ex: últimos 15-20 min, normalmente a parte mais intensa — jogo reduzido, sprints), ou fazer essa parte final em versão condicionada/reduzida em vez de completa com o grupo. <b>Repetir isto nos próximos 2-3 dias</b> até o rácio (agora ${ss.ratio}x) descer perto de 1.3x — a partir daí volta a fazer a sessão completa como o resto do grupo.`;
+      } else if(ss.ratio>1.3){
+        level=1;
+        reasons.push(`ACWR: carga um pouco acima do normal — fora da banda do sweet spot.`);
+        progression = `<b>Fazer a sessão normal com o grupo, mas sem trabalho complementar extra hoje</b> (nem antes nem depois do treino). Se a sessão tiver uma parte final de alta intensidade (jogo reduzido, sprints repetidos), considerar reduzir só essa parte. Não precisa de mais do que isto — o rácio (${ss.ratio}x) tende a normalizar sozinho em poucos dias.`;
+      } else if(ss.ratio<0.8 || shortHistory){
+        level=1;
+        if(ss.ratio<0.8) reasons.push(`ACWR: carga abaixo do normal — fora da banda do sweet spot.`);
+        if(shortHistory) reasons.push(`Histórico curto (${m.nSessions28||0} sessões em 28 dias) — provável chegada recente ao plantel ou regresso após paragem; a carga "habitual" ainda não é fiável.`);
+        if(ss.ratio>0.15 && ss.ratio<0.8){
+          const weeksSafeRaw = Math.log(0.8/ss.ratio)/Math.log(1.10);
+          const weeksFastRaw = Math.log(0.8/ss.ratio)/Math.log(1.18);
+          const cap = (w) => w>8 ? '8+' : Math.ceil(w);
+          progression = `<b>Fazer a sessão normal com o grupo (sem restrições) e acrescentar trabalho complementar individual</b> — ex: 10-15 min de corrida contínua ou circuito, antes ou depois do treino — já que o treino de grupo sozinho não chega para preencher a carga em falta. <b>Ritmo seguro (~10%/semana de aumento no complemento):</b> ~${cap(weeksSafeRaw)} semana(s) até à zona normal. <b>Ritmo mais rápido (~18%/semana, só com boa resposta clínica e sob supervisão):</b> ~${cap(weeksFastRaw)} semana(s). ${weeksSafeRaw>8 ? 'Desvio muito grande — esta é só uma estimativa aproximada; para paragens longas, o plano de reintegração deve ser definido com o preparador físico.' : 'Reavaliar sinais (wellness, dor) antes de cada aumento do complemento.'}`;
+        } else {
+          progression = `Carga aguda muito baixa (praticamente parado) ou histórico ainda muito curto para projetar semanas com confiança. <b>O que fazer:</b> treino condicionado (versão reduzida da sessão de grupo) e reavaliar semana a semana — só entrar na sessão completa quando já houver alguns dias de carga real para comparar.`;
+        }
+      } else {
+        level=0;
+        if(ss.ratio>1.15){
+          reasons.push(`ACWR: dentro do sweet spot, mas a aproximar-se do limite superior (1.3x).`);
+          progression = `<b>Vigiar, sem ação já necessária.</b> Fazer a sessão normal, mas evitar acrescentar trabalho complementar extra nos próximos dias — se continuar a subir, passa a "acima do normal" em breve.`;
+        } else if(ss.ratio<0.85){
+          reasons.push(`ACWR: dentro do sweet spot, mas a aproximar-se do limite inferior (0.8x).`);
+          progression = `<b>Vigiar, sem ação já necessária.</b> Fazer a sessão normal com o grupo — se continuar a descer, considerar já um pequeno complemento individual antes de passar para "abaixo do normal".`;
+        } else {
+          reasons.push(`ACWR: dentro do sweet spot.`);
+          progression = `<b>Sem ação necessária.</b> Fazer a sessão normal com o resto do grupo, sem reduções nem complementos.`;
+        }
+      }
+    } else {
+      reasons.push('Ainda sem dados suficientes (GPS/PSE) para calcular o sweet spot principal.');
+      progression = `Assim que houver alguns dias de GPS (e idealmente também PSE), esta secção passa a mostrar uma indicação prática de progressão para este jogador.`;
+    }
+    if(m.wellZ!==undefined){
+      const fieldReasons = explicitWellReasons(m);
+      if(m.wellZ<-1.5){ level=Math.max(level,2); reasons.push(...(fieldReasons.length?fieldReasons:['Bem-estar claramente pior que o normal.'])); }
+      else if(m.wellZ<-0.75){ level=Math.max(level,1); reasons.push(...(fieldReasons.length?fieldReasons:['Bem-estar ligeiramente pior que o normal.'])); }
+    }
+    if(m.pain && m.pain.daysAgo===0){
+      if(m.pain.maxGrau>=7){ level=Math.max(level,2); reasons.push(`Dor forte reportada hoje (${m.pain.maxGrau}/10): ${m.pain.desc}.`); }
+      else if(m.pain.maxGrau>=4){ level=Math.max(level,1); reasons.push(`Dor moderada reportada hoje (${m.pain.maxGrau}/10): ${m.pain.desc}.`); }
+    }
+    const label = {2:'Falar com o jogador antes de treinar',1:'Vigiar / confirmar antes de treinar',0:'Pode treinar normalmente'}[level];
+    results.push({name:player, level, label, reasons, pain:m.pain, multimetric:m.multimetric, progression, wellZ:m.wellZ, nSessions28:m.nSessions28, acwr: ss?ss.ratio:null, acwrSource: ssName, speedRecord: m.speedRecord});
+  }
+  results.sort((a,b)=> b.level-a.level || a.name.localeCompare(b.name));
+  return results;
+}
+
 async function loadDashboard(){
   document.getElementById('dashSubline').textContent = 'A calcular...';
   try{
@@ -910,74 +1490,14 @@ async function loadDashboard(){
   }
   const lastDate = validDates.sort().slice(-1)[0];
   const metrics = await computeAllMetrics(lastDate);
-
-  const results = [];
-  for(const player in metrics){
-    const m = metrics[player];
-    let level = 0; const reasons = [];
-    if(!m.hasGPS){
-      // Nunca teve GPS nesta app -- provável guarda-redes, não é um "sem dados" preocupante
-      results.push({name:player, level:-1, label:'Sem GPS (provável guarda-redes)', reasons:['Este jogador nunca teve registos de GPS carregados — se for guarda-redes, é esperado e não precisa de sweet spot.'], pain:m.pain, progression:null, wellZ:m.wellZ});
-      continue;
-    }
-    // ACWR principal: métrica combinada (sRPE + Distância, ver computeAllMetrics)
-    const ss = m.combined;
-    const ssName = ss ? ss.source : null;
-    const shortHistory = (m.nSessions28||0) < 10;
-    let progression = null;
-    if(ss){
-      if(ss.ratio>1.5){
-        level=2;
-        reasons.push(`ACWR (${ssName}): carga muito acima do normal esta semana — fora da banda do sweet spot.`);
-        progression = `<b>Reduzir a exposição de hoje/amanhã, dentro do mesmo treino de grupo:</b> sair mais cedo (ex: últimos 15-20 min, normalmente a parte mais intensa — jogo reduzido, sprints), ou fazer essa parte final em versão condicionada/reduzida em vez de completa com o grupo. <b>Repetir isto nos próximos 2-3 dias</b> até o rácio (agora ${ss.ratio}x) descer perto de 1.3x — a partir daí volta a fazer a sessão completa como o resto do grupo.`;
-      } else if(ss.ratio>1.3){
-        level=1;
-        reasons.push(`ACWR (${ssName}): carga um pouco acima do normal — fora da banda do sweet spot.`);
-        progression = `<b>Fazer a sessão normal com o grupo, mas sem trabalho complementar extra hoje</b> (nem antes nem depois do treino). Se a sessão tiver uma parte final de alta intensidade (jogo reduzido, sprints repetidos), considerar reduzir só essa parte. Não precisa de mais do que isto — o rácio (${ss.ratio}x) tende a normalizar sozinho em poucos dias.`;
-      } else if(ss.ratio<0.8 || shortHistory){
-        level=1;
-        if(ss.ratio<0.8) reasons.push(`ACWR (${ssName}): carga abaixo do normal — fora da banda do sweet spot.`);
-        if(shortHistory) reasons.push(`Histórico curto (${m.nSessions28||0} sessões em 28 dias) — provável chegada recente ao plantel ou regresso após paragem; a carga "habitual" ainda não é fiável.`);
-        if(ss.ratio>0.15 && ss.ratio<0.8){
-          const weeksSafeRaw = Math.log(0.8/ss.ratio)/Math.log(1.10);
-          const weeksFastRaw = Math.log(0.8/ss.ratio)/Math.log(1.18);
-          const cap = (w) => w>8 ? '8+' : Math.ceil(w);
-          progression = `<b>Fazer a sessão normal com o grupo (sem restrições) e acrescentar trabalho complementar individual</b> — ex: 10-15 min de corrida contínua ou circuito, antes ou depois do treino — já que o treino de grupo sozinho não chega para preencher a carga em falta. <b>Ritmo seguro (~10%/semana de aumento no complemento):</b> ~${cap(weeksSafeRaw)} semana(s) até à zona normal. <b>Ritmo mais rápido (~18%/semana, só com boa resposta clínica e sob supervisão):</b> ~${cap(weeksFastRaw)} semana(s). ${weeksSafeRaw>8 ? 'Desvio muito grande — esta é só uma estimativa aproximada; para paragens longas, o plano de reintegração deve ser definido com o preparador físico.' : 'Reavaliar sinais (wellness, dor) antes de cada aumento do complemento.'}`;
-        } else {
-          progression = `Carga aguda muito baixa (praticamente parado) ou histórico ainda muito curto para projetar semanas com confiança. <b>O que fazer:</b> treino condicionado (versão reduzida da sessão de grupo) e reavaliar semana a semana — só entrar na sessão completa quando já houver alguns dias de carga real para comparar.`;
-        }
-      } else {
-        level=0;
-        if(ss.ratio>1.15){
-          reasons.push(`ACWR (${ssName}): dentro do sweet spot, mas a aproximar-se do limite superior (1.3x).`);
-          progression = `<b>Vigiar, sem ação já necessária.</b> Fazer a sessão normal, mas evitar acrescentar trabalho complementar extra nos próximos dias — se continuar a subir, passa a "acima do normal" em breve.`;
-        } else if(ss.ratio<0.85){
-          reasons.push(`ACWR (${ssName}): dentro do sweet spot, mas a aproximar-se do limite inferior (0.8x).`);
-          progression = `<b>Vigiar, sem ação já necessária.</b> Fazer a sessão normal com o grupo — se continuar a descer, considerar já um pequeno complemento individual antes de passar para "abaixo do normal".`;
-        } else {
-          reasons.push(`ACWR (${ssName}): dentro do sweet spot.`);
-          progression = `<b>Sem ação necessária.</b> Fazer a sessão normal com o resto do grupo, sem reduções nem complementos.`;
-        }
-      }
-    } else {
-      reasons.push('Ainda sem dados suficientes (GPS/PSE) para calcular o sweet spot principal.');
-      progression = `Assim que houver alguns dias de GPS (e idealmente também PSE), esta secção passa a mostrar uma indicação prática de progressão para este jogador.`;
-    }
-    if(m.wellZ!==undefined){
-      if(m.wellZ<-1.5){ level=Math.max(level,2); reasons.push('Bem-estar claramente pior que o normal.'); }
-      else if(m.wellZ<-0.75){ level=Math.max(level,1); reasons.push('Bem-estar ligeiramente pior que o normal.'); }
-    }
-    const label = {2:'Falar com o jogador antes de treinar',1:'Vigiar / confirmar antes de treinar',0:'Pode treinar normalmente'}[level];
-    results.push({name:player, level, label, reasons, pain:m.pain, multimetric:m.multimetric, progression, wellZ:m.wellZ, nSessions28:m.nSessions28, acwr: ss?ss.ratio:null, acwrSource: ssName, speedRecord: m.speedRecord});
-  }
-  results.sort((a,b)=> b.level-a.level || a.name.localeCompare(b.name));
+  const results = classifyPlayers(metrics, lastDate);
 
   const n2=results.filter(r=>r.level===2).length, n1=results.filter(r=>r.level===1).length, n0=results.filter(r=>r.level===0).length, nGK=results.filter(r=>r.level===-1).length;
-  document.getElementById('dashSubline').innerHTML = `Dados até <b style="color:var(--text)">${lastDate}</b> · ${n2} para falar antes de treinar · ${n1} para vigiar · ${n0} sem alertas${nGK?` · ${nGK} sem GPS (guarda-redes)`:''} · ACWR principal = <b>sRPE</b> (ou Distância quando não há RPE+duração suficientes) — sweet spot é a banda 0.8–1.3.`;
+  document.getElementById('dashSubline').innerHTML = `Dados até <b style="color:var(--text)">${lastDate}</b> · ${n2} para falar antes de treinar · ${n1} para vigiar · ${n0} sem alertas${nGK?` · ${nGK} sem GPS (guarda-redes)`:''} · ACWR principal = <b>métrica combinada</b> (sRPE + Distância) — sweet spot é a banda 0.8–1.3.`;
 
   const cfg = {2:{color:'var(--red)',label:'Falar com o jogador antes de treinar'},1:{color:'var(--yellow)',label:'Vigiar / confirmar'},0:{color:'var(--green)',label:'Pode treinar normalmente'},'-1':{color:'var(--blue)',label:'Sem GPS (guarda-redes)'}};
   const groupsEl = document.getElementById('dashGroups');
-  groupsEl.innerHTML = `<div class="note">ACWR principal = <b>métrica combinada nova</b>: mistura o ACWR de sRPE (RPE × duração da sessão — a definição original de Gabbett 2016) com o ACWR de Distância total (alternativa validada na literatura). Quando ambos existem para um jogador, a métrica combinada é a média dos dois rácios; quando só um existe (falta duração fiável nalguns dias, por exemplo), usa-se só esse — sempre identificado em cada cartão qual foi usado. HSR, Sprint e Acc/Dec continuam como detalhe de apoio, não bandas de sweet spot independentes.</div>`;
+  groupsEl.innerHTML = '';
   [2,1,0,-1].forEach(level=>{
     const items = results.filter(r=>r.level===level);
     if(!items.length) return;
@@ -986,7 +1506,6 @@ async function loadDashboard(){
     section.innerHTML = `<div class="glabel"><span class="gdot" style="background:${c.color}"></span>${c.label} (${items.length})</div>`;
     const list = document.createElement('div'); list.className='plist';
     items.forEach(d=>{
-      const card = document.createElement('div'); card.className='pcard'; card.style.setProperty('--c', c.color);
       let acwrBadge = '';
       if(d.acwr!=null){
         const inBand = d.acwr>=0.8 && d.acwr<=1.3;
@@ -995,32 +1514,318 @@ async function loadDashboard(){
       }
       const progBorder = {2:'rgba(200,84,80,0.4)',1:'rgba(217,164,65,0.4)',0:'rgba(63,174,106,0.4)','-1':'rgba(91,155,213,0.4)'}[d.level];
       const progHtml = d.progression ? `<div class="cargabox" style="border:1px solid ${progBorder}"><b style="color:${c.color}">Progressão prática:</b> ${d.progression}</div>` : '';
-      let painHtml = '';
-      if(d.pain){
-        const da = d.pain.daysAgo;
-        let pc, pcBg, pcBorder;
-        if(da<=2){ pc='var(--red)'; pcBg='rgba(200,84,80,0.08)'; pcBorder='rgba(200,84,80,0.3)'; }
-        else if(da<=5){ pc='var(--yellow)'; pcBg='rgba(217,164,65,0.08)'; pcBorder='rgba(217,164,65,0.3)'; }
-        else if(da<=10){ pc='var(--muted)'; pcBg='rgba(142,166,154,0.08)'; pcBorder='rgba(142,166,154,0.3)'; }
-        else { pc='var(--muted)'; pcBg='rgba(142,166,154,0.04)'; pcBorder='rgba(142,166,154,0.15)'; }
-        painHtml = `<div class="painbox" style="--pc:${pc};--pc-bg:${pcBg};--pc-border:${pcBorder};">⚠ Dor reportada (há ${da}d): ${d.pain.desc}</div>`;
-      }
-      let speedHtml = '';
-      if(d.speedRecord){
-        const sr = d.speedRecord;
-        const color90 = sr.daysAgo90==null ? 'var(--muted)' : (sr.daysAgo90<=7 ? 'var(--green)' : (sr.daysAgo90<=21 ? 'var(--yellow)' : 'var(--red)'));
-        speedHtml = `<div class="preason">🏃 Recorde de velocidade: <b style="color:var(--text)">${sr.value} km/h</b> (${sr.date}, há ${sr.daysAgoRecord}d) · Última vez ≥90% do recorde: <b style="color:${color90}">${sr.last90date ? `${sr.last90date} (há ${sr.daysAgo90}d)` : 'nunca'}</b></div>`;
-      }
-      card.innerHTML = `<div class="pname">${d.name}</div>${acwrBadge}${d.reasons.map(r=>`<div class="preason">${r}</div>`).join('')}
-        ${speedHtml}
-        ${painHtml}
-        ${progHtml}`;
-      list.appendChild(card);
+      const body = `${acwrBadge}${d.reasons.map(r=>`<div class="preason">${r}</div>`).join('')}${progHtml}`;
+      list.insertAdjacentHTML('beforeend', buildPlayerCard(d.name, c.color, body, level>=1));
     });
     section.appendChild(list); groupsEl.appendChild(section);
   });
   }catch(e){
     document.getElementById('dashSubline').innerHTML = `<span style="color:var(--red)">Erro ao calcular: ${e.message}</span>`;
+    console.error(e);
+  }
+}
+
+// Caixa de dor reutilizada nas abas ACWR-adjacentes -- vermelho só quando reportada NO PRÓPRIO
+// DIA de referência, com intensidade a escalar com o grau (0-10); dias anteriores ficam sempre
+// neutros (cinza), porque já não são urgência de hoje.
+// Cartão de jogador colapsável (details/summary) -- fechado mostra só o nome (+ pílula de nível se
+// dada), aberto mostra o resto. Usado em todas as abas com cartões por jogador.
+// Linha de grupo colapsável para tabelas agrupadas por posição (Planeamento, Dados Técnicos,
+// Velocidade Máxima) -- fechada por defeito. As linhas do grupo devem ter tr.dataset.groupId
+// igual a groupIdx e (se startCollapsed) tr.style.display='none' desde o início.
+function addGroupRow(tbody, groupIdx, label, colSpan, startCollapsed){
+  const groupRow = document.createElement('tr');
+  groupRow.className = 'grouprow';
+  if(startCollapsed) groupRow.classList.add('collapsed');
+  const groupCell = document.createElement('td');
+  groupCell.colSpan = colSpan;
+  groupCell.textContent = (startCollapsed?'▸ ':'▾ ') + label;
+  groupRow.appendChild(groupCell);
+  groupRow.addEventListener('click', ()=>{
+    const collapsed = groupRow.classList.toggle('collapsed');
+    groupCell.textContent = (collapsed?'▸ ':'▾ ') + label;
+    tbody.querySelectorAll(`tr[data-group-id="${groupIdx}"]`).forEach(r=> r.style.display = collapsed?'none':'');
+  });
+  tbody.appendChild(groupRow);
+}
+function buildPlayerCard(name, color, bodyHtml, _unused, badgeHtml){
+  return `<details class="pcard" style="--c:${color}">
+    <summary>${badgeHtml||''}${name}</summary>
+    <div class="pcardBody">${bodyHtml}</div>
+  </details>`;
+}
+const WELL_FIELD_LABELS = {cansaco:'Cansaço', sono:'Sono', dor:'Dor', stress:'Stress', humor:'Humor'};
+// Em vez de expor só um z-score agregado (difícil de interpretar), compara cada parâmetro de
+// hoje com a média histórica DESSE jogador nesse parâmetro e devolve frases em português a dizer
+// qual está pior -- usado em todas as abas que mostram alertas de bem-estar (ACWR, Wellness, Dashboard).
+function explicitWellReasons(m){
+  const out = [];
+  if(!m.wellFieldAvgs || !m.wellTodayFields) return out;
+  for(const f in WELL_FIELD_LABELS){
+    const avg = m.wellFieldAvgs[f], today = m.wellTodayFields[f];
+    if(avg==null || today==null) continue;
+    const diff = Math.round((today-avg)*10)/10;
+    if(diff<=-1.5) out.push(`${WELL_FIELD_LABELS[f]} muito pior que o habitual (hoje ${today}, média ${avg}).`);
+    else if(diff<=-0.75) out.push(`${WELL_FIELD_LABELS[f]} pior que o habitual (hoje ${today}, média ${avg}).`);
+  }
+  return out;
+}
+function painBoxHtml(pain, refLabel){
+  if(!pain) return '';
+  const isToday = pain.daysAgo===0;
+  let pc, pcBg, pcBorder;
+  if(isToday && pain.maxGrau>=7){ pc='var(--red)'; pcBg='rgba(200,84,80,0.12)'; pcBorder='rgba(200,84,80,0.4)'; }
+  else if(isToday && pain.maxGrau>=4){ pc='var(--yellow)'; pcBg='rgba(217,164,65,0.1)'; pcBorder='rgba(217,164,65,0.35)'; }
+  else if(isToday){ pc='var(--muted)'; pcBg='rgba(142,166,154,0.08)'; pcBorder='rgba(142,166,154,0.25)'; }
+  else { pc='var(--muted)'; pcBg='rgba(142,166,154,0.04)'; pcBorder='rgba(142,166,154,0.15)'; }
+  const when = isToday ? 'hoje' : `há ${pain.daysAgo}d`;
+  return `<div class="painbox" style="--pc:${pc};--pc-bg:${pcBg};--pc-border:${pcBorder};">⚠ Dor reportada (${when}): ${pain.desc}</div>`;
+}
+
+// ---------- Wellness (questionário de bem-estar + dores) ----------
+async function loadWellness(){
+  document.getElementById('wellSubline').textContent = 'A calcular...';
+  try{
+    const wellness = await getSeries('series_wellness');
+    const allDates = new Set();
+    Object.values(wellness).forEach(pd=>Object.keys(pd).forEach(d=>allDates.add(d)));
+    const validDates = [...allDates].filter(isValidDateStr);
+    if(validDates.length===0){
+      document.getElementById('wellSubline').textContent = 'Ainda não há dados de wellness guardados.';
+      document.getElementById('wellGroups').innerHTML = '';
+      document.getElementById('wellInjurySidebar').innerHTML = '';
+      return;
+    }
+    const lastDate = validDates.sort().slice(-1)[0];
+    const pdfDateEl = document.getElementById('wellPdfDate');
+    if(pdfDateEl && !pdfDateEl.value) pdfDateEl.value = lastDate;
+    const metrics = await computeAllMetrics(lastDate);
+    const items = [];
+    for(const player in metrics){
+      const m = metrics[player];
+      const w = wellness[player] ? wellness[player][lastDate] : null;
+      if(m.wellZ===undefined && !m.pain) continue;
+      let level = 0; const reasons = [];
+      if(m.wellZ!==undefined){
+        const fieldReasons = explicitWellReasons(m);
+        if(m.wellZ<-1.5){ level=2; reasons.push(...(fieldReasons.length?fieldReasons:['Bem-estar claramente pior que o normal.'])); }
+        else if(m.wellZ<-0.75){ level=1; reasons.push(...(fieldReasons.length?fieldReasons:['Bem-estar ligeiramente pior que o normal.'])); }
+      }
+      if(m.pain && m.pain.daysAgo===0){
+        if(m.pain.maxGrau>=7){ level=Math.max(level,2); reasons.push(`Dor forte reportada hoje (${m.pain.maxGrau}/10).`); }
+        else if(m.pain.maxGrau>=4){ level=Math.max(level,1); reasons.push(`Dor moderada reportada hoje (${m.pain.maxGrau}/10).`); }
+      }
+      items.push({name:player, level, wellZ:m.wellZ, w, pain:m.pain, reasons});
+    }
+    items.sort((a,b)=> b.level-a.level || (a.wellZ??0)-(b.wellZ??0) || a.name.localeCompare(b.name));
+    const nBad = items.filter(i=>i.level===2).length, nWatch = items.filter(i=>i.level===1).length;
+    document.getElementById('wellSubline').innerHTML = `Dados de <b style="color:var(--text)">${lastDate}</b> · ${nBad} com alerta forte · ${nWatch} a vigiar · escala 1-5 por parâmetro, comparada com a média própria de cada jogador (z-score).`;
+    const cfg = {2:{color:'var(--red)',label:'Alerta — bem-estar/dor fora do normal'},1:{color:'var(--yellow)',label:'Vigiar'},0:{color:'var(--green)',label:'Normal'}};
+    const groupsEl = document.getElementById('wellGroups');
+    groupsEl.innerHTML = '';
+    // Sidebar de lesões: reaproveita a dor já reportada nos questionários (últimos 7 dias), numa
+    // coluna própria ao lado (não misturada com os cartões de vigiar/falar/normal), para dar
+    // visibilidade permanente a quem pode estar lesionado/incomodado. Quem reportou HOJE fica
+    // sempre em primeiro (o sort já ordena por daysAgo ascendente, então dayAgo=0 fica à cabeça) e
+    // ganha um ícone de aviso (⚠️) ao lado do nome para se distinguir à primeira vista de quem
+    // reportou em dias anteriores.
+    const injurySidebarEl = document.getElementById('wellInjurySidebar');
+    const injuryItems = items.filter(i=>i.pain && i.pain.daysAgo<=7).sort((a,b)=> a.pain.daysAgo-b.pain.daysAgo || a.name.localeCompare(b.name));
+    if(injuryItems.length){
+      const nToday = injuryItems.filter(d=>d.pain.daysAgo===0).length;
+      let html = `<div class="glabel"><span class="gdot" style="background:var(--red)"></span>🩹 Lesões / dores (7 dias) (${injuryItems.length})</div>`;
+      html += `<div class="plist" style="grid-template-columns:1fr;">`;
+      injuryItems.forEach(d=>{
+        const isToday = d.pain.daysAgo===0;
+        const body = painBoxHtml(d.pain);
+        const badge = isToday ? `<span title="Reportado hoje" style="margin-right:6px;">⚠️</span>` : '';
+        html += buildPlayerCard(d.name, isToday?'var(--red)':'var(--muted)', body, null, badge);
+      });
+      html += `</div>`;
+      injurySidebarEl.innerHTML = html;
+    } else {
+      injurySidebarEl.innerHTML = `<div class="note" style="margin:0;">Sem lesões/dores reportadas nos últimos 7 dias.</div>`;
+    }
+    [2,1,0].forEach(level=>{
+      const list = items.filter(i=>i.level===level);
+      if(!list.length) return;
+      const c = cfg[level];
+      const section = document.createElement('div');
+      section.innerHTML = `<div class="glabel"><span class="gdot" style="background:${c.color}"></span>${c.label} (${list.length})</div>`;
+      const plist = document.createElement('div'); plist.className='plist';
+      list.forEach(d=>{
+        const subs = d.w ? `<div class="preason">Cansaço ${d.w.cansaco} · Sono ${d.w.sono} · Dor ${d.w.dor} · Stress ${d.w.stress} · Humor ${d.w.humor}</div>` : `<div class="preason">Sem questionário em ${lastDate}.</div>`;
+        const reasonsHtml = d.reasons.length ? d.reasons.map(r=>`<div class="preason">${r}</div>`).join('') : (d.level>0 ? `<div class="preason">Bem-estar geral pior que o normal (sem histórico suficiente por parâmetro ainda).</div>` : '');
+        const body = `${reasonsHtml}${subs}${painBoxHtml(d.pain)}`;
+        plist.insertAdjacentHTML('beforeend', buildPlayerCard(d.name, c.color, body, level>=1));
+      });
+      section.appendChild(plist); groupsEl.appendChild(section);
+    });
+  }catch(e){
+    document.getElementById('wellSubline').innerHTML = `<span style="color:var(--red)">Erro ao calcular: ${e.message}</span>`;
+    console.error(e);
+  }
+}
+
+// Exporta um PDF do questionário de wellness de um dia -- monta uma página HTML própria (tabela
+// simples, fundo branco para impressão) e usa o diálogo nativo de imprimir do browser em modo
+// "Guardar como PDF". Não precisa de nenhuma biblioteca extra, funciona em qualquer browser.
+async function exportWellnessPdf(){
+  const dateStr = document.getElementById('wellPdfDate').value;
+  if(!dateStr){ alert('Escolhe uma data primeiro.'); return; }
+  try{
+    const wellness = await getSeries('series_wellness');
+    const rows = [];
+    for(const player of CANONICAL){
+      const rec = wellness[player] ? wellness[player][dateStr] : null;
+      if(!rec) continue;
+      const painParts = [];
+      if(rec.painLocal) painParts.push(`${cleanPainLabel(rec.painLocal)}${rec.painGrau?` (${rec.painGrau}/10)`:''}`);
+      if(rec.painOutra) painParts.push(`${cleanPainLabel(rec.painOutra)}${rec.painOutraGrau?` (${rec.painOutraGrau}/10)`:''}`);
+      rows.push({player, ...rec, pain: painParts.join('; ') || '—'});
+    }
+    if(!rows.length){ alert(`Sem respostas de wellness guardadas para ${dateStr}.`); return; }
+    rows.sort((a,b)=> a.player.localeCompare(b.player));
+    const seasons = getSeasons();
+    const active = seasons.find(s=>s.id===getActiveSeasonId()) || seasons[0];
+    const tableRows = rows.map(r=>`<tr>
+      <td>${r.player}</td>
+      <td style="text-align:center;">${r.cansaco ?? '—'}</td>
+      <td style="text-align:center;">${r.sono ?? '—'}</td>
+      <td style="text-align:center;">${r.dor ?? '—'}</td>
+      <td style="text-align:center;">${r.stress ?? '—'}</td>
+      <td style="text-align:center;">${r.humor ?? '—'}</td>
+      <td>${r.pain}</td>
+    </tr>`).join('');
+    const html = `<!DOCTYPE html><html lang="pt"><head><meta charset="UTF-8">
+      <title>Wellness ${dateStr}</title>
+      <style>
+        body{font-family:Arial,Helvetica,sans-serif;color:#111;padding:24px;}
+        h1{font-size:18px;margin-bottom:2px;}
+        .sub{color:#555;font-size:12px;margin-bottom:18px;}
+        table{width:100%;border-collapse:collapse;font-size:12px;}
+        th,td{border:1px solid #ccc;padding:6px 8px;text-align:left;}
+        th{background:#eee;text-transform:uppercase;font-size:10px;letter-spacing:.5px;}
+        @media print{ body{padding:0;} }
+      </style>
+      </head><body>
+      <h1>Questionário de Wellness — ${dateStr}</h1>
+      <div class="sub">${active.club} · Época ${active.year} · ${rows.length} resposta(s) · escala 1-5 por parâmetro (Cansaço/Sono/Dor/Stress/Humor)</div>
+      <table>
+        <thead><tr><th>Jogador</th><th>Cansaço</th><th>Sono</th><th>Dor</th><th>Stress</th><th>Humor</th><th>Lesão/dor reportada</th></tr></thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+      <script>window.onload=()=>{window.print();};</script>
+      </body></html>`;
+    const win = window.open('', '_blank');
+    if(!win){ alert('O browser bloqueou a janela nova — permite popups para exportar o PDF.'); return; }
+    win.document.write(html);
+    win.document.close();
+  }catch(e){ alert('Erro a gerar o PDF: ' + e.message); console.error(e); }
+}
+
+// ---------- PSE (esforço percebido pós-treino) ----------
+async function loadPseTab(){
+  document.getElementById('pseSubline').textContent = 'A calcular...';
+  try{
+    const pse = await getSeries('series_pse');
+    const allDates = new Set();
+    Object.values(pse).forEach(pd=>Object.keys(pd).forEach(d=>allDates.add(d)));
+    const validDates = [...allDates].filter(isValidDateStr);
+    if(validDates.length===0){
+      document.getElementById('pseSubline').textContent = 'Ainda não há dados de PSE guardados.';
+      document.getElementById('pseGroups').innerHTML = '';
+      return;
+    }
+    const lastDate = validDates.sort().slice(-1)[0];
+    const metrics = await computeAllMetrics(lastDate);
+    const items = [];
+    for(const player in metrics){
+      const m = metrics[player];
+      const rec = pse[player] ? pse[player][lastDate] : null;
+      if(!rec && !m.srpe) continue;
+      let level = 0; const reasons = [];
+      if(m.srpe){
+        if(m.srpe.ratio>1.5){ level=2; reasons.push(`sRPE ACWR ${m.srpe.ratio}: carga muito acima do normal esta semana.`); }
+        else if(m.srpe.ratio<0.5){ level=2; reasons.push(`sRPE ACWR ${m.srpe.ratio}: carga muito abaixo do normal esta semana.`); }
+        else if(m.srpe.ratio>1.3){ level=1; reasons.push(`sRPE ACWR ${m.srpe.ratio}: carga um pouco acima do normal.`); }
+        else if(m.srpe.ratio<0.8){ level=1; reasons.push(`sRPE ACWR ${m.srpe.ratio}: carga um pouco abaixo do normal.`); }
+      }
+      items.push({name:player, level, srpe:m.srpe, rec, reasons});
+    }
+    items.sort((a,b)=> b.level-a.level || a.name.localeCompare(b.name));
+    const nBad = items.filter(i=>i.level===2).length, nWatch = items.filter(i=>i.level===1).length;
+    document.getElementById('pseSubline').innerHTML = `Dados de <b style="color:var(--text)">${lastDate}</b> · ${nBad} fora do normal · ${nWatch} a vigiar · rácio sRPE = ACWR de (RPE × duração), sweet spot 0.8-1.3.`;
+    const cfg = {2:{color:'var(--red)',label:'Fora do normal'},1:{color:'var(--yellow)',label:'Vigiar'},0:{color:'var(--green)',label:'Normal'}};
+    const groupsEl = document.getElementById('pseGroups');
+    groupsEl.innerHTML = '';
+    [2,1,0].forEach(level=>{
+      const list = items.filter(i=>i.level===level);
+      if(!list.length) return;
+      const c = cfg[level];
+      const section = document.createElement('div');
+      section.innerHTML = `<div class="glabel"><span class="gdot" style="background:${c.color}"></span>${c.label} (${list.length})</div>`;
+      const plist = document.createElement('div'); plist.className='plist';
+      list.forEach(d=>{
+        const badge = d.srpe ? `<div style="display:inline-block;background:${c.color};color:#0b1210;font-weight:700;font-size:13px;padding:2px 10px;border-radius:20px;margin-bottom:6px;">sRPE ACWR ${d.srpe.ratio}</div>` : '';
+        const recHtml = d.rec ? `<div class="preason">Sessão: ${d.rec.tipo||'—'} · RPE ${d.rec.rpe}/10</div>` : `<div class="preason">Sem PSE em ${lastDate}.</div>`;
+        const reasonsHtml = d.reasons.map(r=>`<div class="preason">${r}</div>`).join('');
+        const noSrpeNote = !d.srpe ? `<div class="preason" style="color:var(--muted)">Ainda sem histórico suficiente (mín. 5 dias com RPE+duração) para calcular o rácio.</div>` : '';
+        const body = `${badge}${reasonsHtml}${recHtml}${noSrpeNote}`;
+        plist.insertAdjacentHTML('beforeend', buildPlayerCard(d.name, c.color, body, level>=1));
+      });
+      section.appendChild(plist); groupsEl.appendChild(section);
+    });
+  }catch(e){
+    document.getElementById('pseSubline').innerHTML = `<span style="color:var(--red)">Erro ao calcular: ${e.message}</span>`;
+    console.error(e);
+  }
+}
+
+// ---------- Velocidade Máxima ----------
+async function loadVelocidade(){
+  document.getElementById('velSubline').textContent = 'A calcular...';
+  try{
+    const today = await getRefDate();
+    const metrics = await computeAllMetrics(today);
+    const positions = await getSeries('series_positions');
+    const posOrder = {'DC':0,'LAT':1,'MC':2,'EXT':3,'AC':4};
+    const posFullName = {'DC':'Defesa Central','LAT':'Lateral','MC':'Médio Centro','EXT':'Extremo','AC':'Avançado'};
+    const items = [];
+    for(const player in metrics){
+      const m = metrics[player];
+      if(!m.speedRecord) continue;
+      items.push({name:player, sr:m.speedRecord, pos: positions[player]||null});
+    }
+    // agrupa por posição; dentro de cada posição, destaca primeiro quem está mais tempo sem
+    // chegar perto do recorde
+    items.sort((a,b)=> (posOrder[a.pos]??99)-(posOrder[b.pos]??99) || (b.sr.daysAgo90 ?? 9999)-(a.sr.daysAgo90 ?? 9999) || a.name.localeCompare(b.name));
+    const brokenThisWeek = items.filter(i=> i.sr.daysAgoRecord<=7).length;
+    const staleOver7 = items.filter(i=> (i.sr.daysAgo90 ?? 9999) > 7).length;
+    document.getElementById('velSubline').innerHTML = `${items.length} jogador(es) com recorde registado · <b style="color:var(--green)">${brokenThisWeek}</b> bateram recorde nos últimos 7 dias · <b style="color:var(--red)">${staleOver7}</b> sem chegar a 90% do recorde há mais de 7 dias.`;
+    const tbody = document.querySelector('#velTable tbody');
+    tbody.innerHTML = '';
+    let lastPos = null, groupIdx = -1;
+    for(const it of items){
+      if(it.pos!==lastPos){
+        groupIdx++;
+        const groupLabel = it.pos ? `${posFullName[it.pos]} (${it.pos})` : 'Sem posição capturada';
+        addGroupRow(tbody, groupIdx, groupLabel, 5, true);
+        lastPos = it.pos;
+      }
+      const sr = it.sr;
+      const color90 = sr.daysAgo90==null ? 'var(--red)' : (sr.daysAgo90<=7 ? 'var(--green)' : (sr.daysAgo90<=21 ? 'var(--yellow)' : 'var(--red)'));
+      const recentBadge = sr.daysAgoRecord<=7 ? ' 🆕' : '';
+      const tr = document.createElement('tr');
+      tr.dataset.groupId = groupIdx;
+      tr.style.display = 'none';
+      tr.innerHTML = `<td>${it.name}</td><td><b>${sr.value} km/h</b>${recentBadge}</td><td>${sr.date} (há ${sr.daysAgoRecord}d)</td>
+        <td style="color:${color90}">${sr.last90date ? sr.last90date : 'nunca'}</td>
+        <td style="color:${color90}">${sr.daysAgo90!=null ? `há ${sr.daysAgo90}d` : '—'}</td>`;
+      tbody.appendChild(tr);
+    }
+  }catch(e){
+    document.getElementById('velSubline').innerHTML = `<span style="color:var(--red)">Erro ao calcular: ${e.message}</span>`;
     console.error(e);
   }
 }
@@ -1187,7 +1992,7 @@ function isOfficialGameLabel(label){
 }
 async function getOfficialGameDates(){
   const sessions = await getSeries('series_sessions');
-  const roadmapGameDates = ROADMAP.filter(r=>classifyDayLabel(r.label)==='JOGO' && isOfficialGameLabel(r.label)).map(r=>r.data);
+  const roadmapGameDates = ROADMAP.filter(r=>dayTypeKey(r)==='JOGO' && isOfficialGameLabel(r.label)).map(r=>r.data);
   const manualGameDates = Object.keys(sessions).filter(d=>{
     if(sessions[d].tipo!=='Jogo') return false;
     const roadmapDay = ROADMAP.find(r=>r.data===d);
@@ -1197,31 +2002,56 @@ async function getOfficialGameDates(){
   });
   return [...new Set([...roadmapGameDates, ...manualGameDates])];
 }
+// Média real da equipa em jogos oficiais (ver getOfficialGameDates) por variável -- usada pelo
+// Benchmark de jogo e pelo alerta de equipa no Dashboard, para não duplicar a lógica duas vezes.
+async function computeRealGameAverages(){
+  try{
+    const gps = await getSeries('series_gps');
+    const gameDates = await getOfficialGameDates();
+    if(!gameDates.length) return null;
+    const realGame = {distancia:[], hsr:[], sprint:[], acc_dec:[]};
+    for(const date of gameDates){
+      for(const player in gps){
+        if(gps[player][date]){
+          for(const vkey of ['distancia','hsr','sprint','acc_dec']) realGame[vkey].push(gps[player][date][vkey]);
+        }
+      }
+    }
+    for(const vkey in realGame){
+      const arr = realGame[vkey];
+      realGame[vkey] = arr.length ? Math.round((arr.reduce((a,b)=>a+b,0)/arr.length)*10)/10 : null;
+    }
+    return realGame;
+  }catch(e){ console.error(e); return null; }
+}
+// Médias da equipa só no ÚLTIMO jogo oficial (não a média de todos os jogos) -- usado no
+// dashboard para alertar rapidamente se o jogo mais recente ficou muito abaixo do esperado,
+// mesmo que a média da época ainda esteja dentro do normal.
+async function computeLastGameAverages(){
+  try{
+    const gps = await getSeries('series_gps');
+    const gameDates = await getOfficialGameDates();
+    if(!gameDates.length) return null;
+    const lastDate = [...gameDates].sort().slice(-1)[0];
+    const vals = {distancia:[], hsr:[], sprint:[], acc_dec:[]};
+    for(const player in gps){
+      if(gps[player][lastDate]){
+        for(const vkey of ['distancia','hsr','sprint','acc_dec']) vals[vkey].push(gps[player][lastDate][vkey]);
+      }
+    }
+    const out = {date: lastDate};
+    for(const vkey in vals){
+      out[vkey] = vals[vkey].length ? Math.round((vals[vkey].reduce((a,b)=>a+b,0)/vals[vkey].length)*10)/10 : null;
+    }
+    return out;
+  }catch(e){ console.error(e); return null; }
+}
 async function renderBenchmarkTables(){
   const labels = {distancia:'Distância (m)', hsr:'HSR (m)', sprint:'Sprint (m)', acc_dec:'Acc/Dec (nº, 2 m/s²)'};
   const body = document.querySelector('#benchTable tbody');
   body.innerHTML = '';
 
-  // tenta calcular a média real do SC Vianense em jogo, a partir dos dados já carregados
-  let realGame = null;
-  try{
-    const gps = await getSeries('series_gps');
-    const gameDates = await getOfficialGameDates();
-    if(gameDates.length){
-      realGame = {distancia:[], hsr:[], sprint:[], acc_dec:[]};
-      for(const date of gameDates){
-        for(const player in gps){
-          if(gps[player][date]){
-            for(const vkey of ['distancia','hsr','sprint','acc_dec']) realGame[vkey].push(gps[player][date][vkey]);
-          }
-        }
-      }
-      for(const vkey in realGame){
-        const arr = realGame[vkey];
-        realGame[vkey] = arr.length ? Math.round((arr.reduce((a,b)=>a+b,0)/arr.length)*10)/10 : null;
-      }
-    }
-  }catch(e){ console.error(e); }
+  const realGame = await computeRealGameAverages();
 
   for(const key of ['distancia','hsr','sprint','acc_dec']){
     const b = BENCHMARK[key];
@@ -1269,8 +2099,11 @@ async function renderBenchmarkTables(){
   const posLabels = {distancia:'Distância (m)', hsr:'HSR (m)', sprint:'Sprint (m)', acc_dec:'Acc/Dec (nº)'};
   const posBody = document.querySelector('#posBenchTable tbody');
   posBody.innerHTML = '';
+  let posGroupIdx = -1;
   for(const pos of ['DC','LAT','MC','EXT','AC']){
     const row = POS_BENCH[pos];
+    posGroupIdx++;
+    addGroupRow(posBody, posGroupIdx, row.label, 7, true);
     let first = true;
     for(const vkey of ['distancia','hsr','sprint','acc_dec']){
       const r = row[vkey];
@@ -1279,6 +2112,8 @@ async function renderBenchmarkTables(){
       const pctPL = real!=null ? Math.round(100*real/r.pl.mid) : null;
       const pctL3 = real!=null ? Math.round(100*real/r.liga3.mid) : null;
       const tr = document.createElement('tr');
+      tr.dataset.groupId = posGroupIdx;
+      tr.style.display = 'none';
       tr.innerHTML = `<td>${first ? row.label : ''}</td><td>${posLabels[vkey]}</td><td>${r.pl.lo}–${r.pl.hi} (méd. ${r.pl.mid})</td><td>${r.liga3.lo}–${r.liga3.hi} (méd. ${r.liga3.mid})</td><td>${realCell}</td><td>${pctPill(pctPL)}</td><td>${pctPill(pctL3)}</td>`;
       posBody.appendChild(tr);
       first = false;
@@ -1297,11 +2132,17 @@ function renderRoadmapTable(){
   const today = todayStr();
   let cycleSum = {distancia_jogo:0,hsr_jogo:0,sprint_jogo:0,acc_dec_jogo:0,
                   distancia:0,hsr:0,sprint:0,acc_dec:0, nDias:0};
+  // TODOS os dias (incluindo folgas e jogos, mesmo seguidos uns aos outros) ficam sempre dentro
+  // de algum grupo colapsável -- nunca fica nenhuma linha "solta" sempre visível. Um grupo fecha
+  // assim que aparece uma folga/jogo (essa linha entra no grupo que está a fechar); a linha
+  // seguinte abre logo um grupo novo, mesmo que seja só outra folga sozinha.
+  let groupIdx = -1, groupOpen = false;
   const flushCycleRow = () => {
     if(cycleSum.nDias===0) return;
     const tr = document.createElement('tr');
     tr.style.background = 'rgba(63,174,106,0.06)';
     tr.style.fontWeight = '600';
+    tr.dataset.groupId = groupIdx; tr.style.display = 'none';
     const cell = (vkey) => `<td colspan="3" style="text-align:center">Σ jogo: ${cycleSum[vkey+'_jogo']}% · Σ crónica: ${cycleSum[vkey]}%</td>`;
     tr.innerHTML = `<td colspan="3" style="color:var(--green)">Total do ciclo (${cycleSum.nDias} dias de treino)</td>${cell('distancia')}${cell('hsr')}${cell('sprint')}${cell('acc_dec')}`;
     body.appendChild(tr);
@@ -1309,9 +2150,14 @@ function renderRoadmapTable(){
   };
   ROADMAP.forEach((w,idx)=>{
     ensureJogoFields(w);
+    if(!groupOpen){
+      groupIdx++;
+      addGroupRow(body, groupIdx, `A partir de ${w.data}`, 15, true);
+      groupOpen = true;
+    }
     const tr = document.createElement('tr');
     if(w.data===today) tr.style.background = 'rgba(63,174,106,0.08)';
-    const key = classifyDayLabel(w.label);
+    const key = dayTypeKey(w);
     const isGame = key==='JOGO';
     const isFolga = key==='FOLGA';
     let cells;
@@ -1334,11 +2180,14 @@ function renderRoadmapTable(){
       cycleSum.nDias++;
     }
     tr.innerHTML = `<td>${w.data}${w.data===today?' (hoje)':''}</td><td>${w.md}</td><td>${w.label}</td>${cells}`;
+    tr.dataset.groupId = groupIdx; tr.style.display = 'none';
     body.appendChild(tr);
-    // fecha o ciclo assim que encontra folga ou jogo (fim natural do microciclo)
-    if(isFolga || isGame) flushCycleRow();
+    // fecha o grupo assim que encontra folga ou jogo (fim natural do microciclo) -- flushCycleRow()
+    // corre ANTES de fechar, para o "Total do ciclo" também ficar dentro do mesmo grupo. A
+    // próxima linha (mesmo que seja outra folga) abre logo um grupo novo (groupOpen=false).
+    if(isFolga || isGame){ flushCycleRow(); groupOpen = false; }
   });
-  flushCycleRow(); // apanha um ciclo final ainda em curso, sem folga/jogo a fechar
+  flushCycleRow();
 }
 
 async function editRoadmapDayJogo(idx, vkey, value){
@@ -1373,27 +2222,47 @@ async function editPlayerPosition(player, newPos){
 const RAMP_SESSOES_DEFAULT = 16;
 async function editPlayerStatus(player, newStatus){
   const statusMap = await getSeries('series_player_status');
+  const prev = statusMap[player];
   if(!newStatus){
     delete statusMap[player];
   } else {
     const today = await getRefDate();
     const rec = {status:newStatus, inicio:today, sessoesAlvo:RAMP_SESSOES_DEFAULT};
-    if(newStatus==='RETORNO_LESAO'){
-      // snapshot da crónica própria ANTES de aplicar qualquer rampa (ainda não há estado gravado,
-      // por isso computeAllMetrics devolve aqui os valores próprios reais, não sobrepostos).
-      const metrics = await computeAllMetrics(today);
-      const m = metrics[player];
-      const refChronic = {};
-      if(m && m.multimetric){
-        for(const vkey of ['distancia','hsr','sprint','acc_dec']){
-          if(m.multimetric[vkey]) refChronic[vkey] = m.multimetric[vkey].chronic_avg;
+    if(newStatus==='RETORNO_LESAO' || newStatus==='LESIONADO'){
+      if(newStatus==='RETORNO_LESAO' && prev && prev.status==='LESIONADO' && prev.refChronic){
+        // O jogador já estava marcado como lesionado -- reaproveita a crónica guardada NESSE
+        // momento (antes de a carga decair por falta de treino durante a lesão), em vez de
+        // recalcular agora com dados desatualizados/em falta.
+        rec.refChronic = prev.refChronic;
+      } else {
+        // snapshot da crónica própria ANTES de aplicar qualquer rampa/lesão (ainda não há estado
+        // gravado, por isso computeAllMetrics devolve aqui os valores próprios reais).
+        const metrics = await computeAllMetrics(today);
+        const m = metrics[player];
+        const refChronic = {};
+        if(m && m.multimetric){
+          for(const vkey of ['distancia','hsr','sprint','acc_dec']){
+            if(m.multimetric[vkey]) refChronic[vkey] = m.multimetric[vkey].chronic_avg;
+          }
         }
+        if(m && m.srpe) refChronic.srpe = m.srpe.chronic_avg;
+        rec.refChronic = refChronic;
       }
-      if(m && m.srpe) refChronic.srpe = m.srpe.chronic_avg;
-      rec.refChronic = refChronic;
     }
     statusMap[player] = rec;
   }
+  await setSeries('series_player_status', statusMap);
+  loadTecnico();
+}
+// Permite corrigir a data de início do onboarding/regresso de lesão (ex.: o staff só marca o
+// estado na app alguns dias depois de já ter começado na realidade). As sessões de treino já
+// existentes a partir dessa data passam logo a contar para a rampa (ver sessionsSince em
+// applyRampOverrides, que conta sessões entre a data guardada aqui e hoje).
+async function editPlayerStatusDate(player, newDate){
+  if(!newDate) return;
+  const statusMap = await getSeries('series_player_status');
+  if(!statusMap[player]) return;
+  statusMap[player].inicio = newDate;
   await setSeries('series_player_status', statusMap);
   loadTecnico();
 }
@@ -1406,45 +2275,44 @@ async function loadTecnico(){
   const playerStatus = await getSeries('series_player_status');
   const body = document.querySelector('#techTable tbody');
   body.innerHTML = '';
-  const posOrder = {'DC':0,'LAT':1,'MC':2,'EXT':3,'AC':4};
-  const posFullName = {'DC':'Defesa Central','LAT':'Lateral','MC':'Médio Centro','EXT':'Extremo','AC':'Avançado'};
+  const posOrder = {'GR':-1,'DC':0,'LAT':1,'MC':2,'EXT':3,'AC':4};
+  const posFullName = {'GR':'Guarda-Redes','DC':'Defesa Central','LAT':'Lateral','MC':'Médio Centro','EXT':'Extremo','AC':'Avançado'};
   const sortedPlayers = [...CANONICAL].sort((a,b)=>{
     const pa = posOrder[positions[a]] ?? 99, pb = posOrder[positions[b]] ?? 99;
     return pa-pb || a.localeCompare(b);
   });
-  let lastPos = null;
+  let lastPos = null, groupIdx = -1;
   for(const player of sortedPlayers){
-    const m = metrics[player];
-    if(!m || !m.multimetric) continue;
+    const m = metrics[player] || {name:player, hasGPS:false};
     const pos = positions[player] || null;
     if(pos!==lastPos){
-      const groupRow = document.createElement('tr');
-      const groupCell = document.createElement('td');
-      groupCell.colSpan = 16;
-      groupCell.style.background = 'var(--panel2)';
-      groupCell.style.color = 'var(--accent)';
-      groupCell.style.fontWeight = '600';
-      groupCell.style.fontSize = '11px';
-      groupCell.style.textTransform = 'uppercase';
-      groupCell.style.letterSpacing = '.5px';
-      groupCell.textContent = pos ? `${posFullName[pos]} (${pos})` : 'Sem posição capturada';
-      groupRow.appendChild(groupCell);
-      body.appendChild(groupRow);
+      groupIdx++;
+      const groupLabel = pos ? `${posFullName[pos]} (${pos})` : 'Sem posição capturada';
+      addGroupRow(body, groupIdx, groupLabel, 16, true);
       lastPos = pos;
     }
-    const mm = m.multimetric;
-    const cell = (vkey, field) => mm[vkey] ? Math.round(mm[vkey][field]*10)/10 : '—';
-    const combined = m.combined ? `${m.combined.ratio} (${m.combined.source})` : '—';
+    const isInjured = !!m.injured;
+    const mm = m.multimetric || {};
+    const cell = (vkey, field) => (isInjured || !mm[vkey]) ? '—' : Math.round(mm[vkey][field]*10)/10;
+    const combined = isInjured ? '—' : (m.combined ? `${m.combined.ratio} (${m.combined.source})` : '—');
     const tr = document.createElement('tr');
     tr.style.cursor = 'pointer';
-    const posOptions = ['','DC','LAT','MC','EXT','AC'].map(p=>`<option value="${p}" ${p===(pos||'')?'selected':''}>${p||'— sem posição —'}</option>`).join('');
-    const curStatus = (playerStatus[player] && playerStatus[player].status) || '';
-    const statusOptions = [['','Normal'],['ONBOARDING','Onboarding (novo)'],['RETORNO_LESAO','Regresso de lesão']]
+    tr.dataset.groupId = groupIdx;
+    tr.style.display = 'none';
+    const posOptions = ['','GR','DC','LAT','MC','EXT','AC'].map(p=>`<option value="${p}" ${p===(pos||'')?'selected':''}>${p||'— sem posição —'}</option>`).join('');
+    const statusRec = playerStatus[player] || null;
+    const curStatus = (statusRec && statusRec.status) || '';
+    const statusOptions = [['','Normal'],['ONBOARDING','Onboarding (novo)'],['RETORNO_LESAO','Regresso de lesão'],['LESIONADO','Lesionado (sem dados)']]
       .map(([v,l])=>`<option value="${v}" ${v===curStatus?'selected':''}>${l}</option>`).join('');
-    const rampBadge = m.rampInfo
-      ? `<br><span style="color:var(--accent);font-size:10px;">rampa: ${m.rampInfo.sessionsDone}/${m.rampInfo.sessoesAlvo} sessões</span>`
-      : (curStatus ? `<br><span style="color:var(--green);font-size:10px;">rampa concluída</span>` : '');
-    tr.innerHTML = `<td>${player} <span style="color:var(--muted);font-size:10px;">(clicar p/ detalhe)</span></td><td><select onclick="event.stopPropagation()" onchange="editPlayerPosition('${player.replace(/'/g,"\\'")}', this.value)" style="background:var(--panel2);color:inherit;border:1px solid var(--border);border-radius:4px;padding:2px 4px;">${posOptions}</select></td><td><select onclick="event.stopPropagation()" onchange="editPlayerStatus('${player.replace(/'/g,"\\'")}', this.value)" style="background:var(--panel2);color:inherit;border:1px solid var(--border);border-radius:4px;padding:2px 4px;">${statusOptions}</select>${rampBadge}</td><td>${combined}</td>
+    const statusDateBadge = (curStatus && statusRec && statusRec.inicio)
+      ? `<br><span style="color:var(--muted);font-size:10px;">desde <input type="date" value="${statusRec.inicio}" onclick="event.stopPropagation()" onchange="editPlayerStatusDate('${player.replace(/'/g,"\\'")}', this.value)" style="display:inline-block;width:auto;margin:0;padding:1px 4px;font-size:10px;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:4px;"></span>`
+      : '';
+    const rampBadge = curStatus==='LESIONADO'
+      ? `<br><span style="color:var(--red);font-size:10px;">sem dados enquanto durar a lesão</span>`
+      : (m.rampInfo
+        ? `<br><span style="color:var(--accent);font-size:10px;">rampa: ${m.rampInfo.sessionsDone}/${m.rampInfo.sessoesAlvo} sessões</span>`
+        : (curStatus ? `<br><span style="color:var(--green);font-size:10px;">rampa concluída</span>` : ''));
+    tr.innerHTML = `<td>${player} <span style="color:var(--muted);font-size:10px;">(clicar p/ detalhe)</span></td><td><select onclick="event.stopPropagation()" onchange="editPlayerPosition('${player.replace(/'/g,"\\'")}', this.value)" style="background:var(--panel2);color:inherit;border:1px solid var(--border);border-radius:4px;padding:2px 4px;">${posOptions}</select></td><td><select onclick="event.stopPropagation()" onchange="editPlayerStatus('${player.replace(/'/g,"\\'")}', this.value)" style="background:var(--panel2);color:inherit;border:1px solid var(--border);border-radius:4px;padding:2px 4px;">${statusOptions}</select>${statusDateBadge}${rampBadge}</td><td>${combined}</td>
       <td>${cell('distancia','acute_avg')}</td><td>${cell('distancia','chronic_avg')}</td><td>${cell('distancia','ratio')}</td>
       <td>${cell('hsr','acute_avg')}</td><td>${cell('hsr','chronic_avg')}</td><td>${cell('hsr','ratio')}</td>
       <td>${cell('sprint','acute_avg')}</td><td>${cell('sprint','chronic_avg')}</td><td>${cell('sprint','ratio')}</td>
@@ -1467,11 +2335,64 @@ async function loadTecnico(){
       detailCell.innerHTML = '<div style="padding:8px;color:var(--muted);">Sem registos de GPS.</div>';
     }
     detailRow.appendChild(detailCell);
+    detailRow.dataset.groupId = groupIdx;
+    detailRow.style.display = 'none';
     tr.addEventListener('click', ()=>{
       detailCell.style.display = detailCell.style.display==='none' ? 'table-cell' : 'none';
     });
     body.appendChild(tr);
     body.appendChild(detailRow);
+  }
+}
+
+// Calendário de mês do Dashboard: gera a grelha de 6 semanas (42 células) do mês pedido, com
+// navegação para mês anterior/seguinte guardada em window.__dashCalMonthOffset (relativo ao mês
+// real de hoje). Cada célula é a mesma célula arrastável usada na aba Calendário (calDragStart/
+// calDrop/calCellClick), por isso mover um dia aqui ou lá fica sempre sincronizado (mesmo ROADMAP).
+window.__dashCalMonthOffset = window.__dashCalMonthOffset || 0;
+function buildMonthCalendarHtml(calToday, monthOffset){
+  const base = new Date(calToday+'T00:00:00');
+  const viewFirst = new Date(base.getFullYear(), base.getMonth()+monthOffset, 1);
+  const y = viewFirst.getFullYear(), mo = viewFirst.getMonth();
+  const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const dias = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+  const startDow = (viewFirst.getDay()+6)%7; // 0=Segunda
+  const gridStart = new Date(y, mo, 1 - startDow);
+  let cells = '';
+  for(let i=0;i<42;i++){
+    const d = new Date(gridStart); d.setDate(gridStart.getDate()+i);
+    const dStr = toLocalISODate(d);
+    const inMonth = d.getMonth()===mo;
+    const isToday = dStr===calToday;
+    const day = ROADMAP.find(r=>r.data===dStr);
+    const key = day ? dayTypeKey(day) : null;
+    const pillColor = key ? (DAY_TYPE_COLORS[key]||'var(--muted)') : null;
+    const pill = day ? `<div class="monthPill" style="background:color-mix(in srgb, ${pillColor} 20%, transparent);color:${pillColor};">${PROFILE_LABELS[key]||key}</div>` : '';
+    cells += `<div class="monthCell${inMonth?'':' outMonth'}" draggable="true"
+      ondragstart="calDragStart(event,'${dStr}')" ondragend="calDragEnd()"
+      ondragover="event.preventDefault()" ondrop="calDrop(event,'${dStr}')"
+      onclick="calCellClick('${dStr}','goToPlaneamentoDate')">
+      <div class="monthCellNum${isToday?' today':''}">${d.getDate()}</div>
+      ${pill}
+    </div>`;
+  }
+  const dowRow = dias.map(d=>`<div class="monthDow">${d}</div>`).join('');
+  return `<div class="monthCalHeader">
+      <button class="monthCalNavBtn" onclick="event.stopPropagation();window.__dashCalMonthOffset=(window.__dashCalMonthOffset||0)-1;loadInicio();">◀</button>
+      <div class="monthCalTitle">${monthNames[mo]} ${y}</div>
+      <button class="monthCalNavBtn" onclick="event.stopPropagation();window.__dashCalMonthOffset=(window.__dashCalMonthOffset||0)+1;loadInicio();">▶</button>
+    </div>
+    <div class="monthGrid">${dowRow}${cells}</div>`;
+}
+function goToPlaneamentoDate(dateStr){
+  const tabBtn = document.querySelector('[data-tab="planeamento"]');
+  if(tabBtn) tabBtn.click();
+  const picker = document.getElementById('dayPicker');
+  if(!picker) return;
+  const idx = ROADMAP.findIndex(r=>r.data===dateStr);
+  if(idx>=0){
+    picker.value = idx;
+    loadPlaneamento();
   }
 }
 
@@ -1553,25 +2474,16 @@ async function loadPlaneamento(){
       return `<span style="color:${color}">${arrow} ${sign}${Math.abs(pctDev)}%</span>`;
     }
 
-    let lastPos = null;
+    let lastPos = null, groupIdx = -1;
     for(const player of sortedPlayers){
       const m = metrics[player];
       if(!m || !m.multimetric) continue;
 
       const pos = positions[player] || null;
       if(pos!==lastPos){
-        const groupRow = document.createElement('tr');
-        const groupCell = document.createElement('td');
-        groupCell.colSpan = 13;
-        groupCell.style.background = 'var(--panel2)';
-        groupCell.style.color = 'var(--accent)';
-        groupCell.style.fontWeight = '600';
-        groupCell.style.fontSize = '11px';
-        groupCell.style.textTransform = 'uppercase';
-        groupCell.style.letterSpacing = '.5px';
-        groupCell.textContent = pos ? `${posFullName[pos]} (${pos})` : 'Sem posição capturada';
-        groupRow.appendChild(groupCell);
-        tbody.appendChild(groupRow);
+        groupIdx++;
+        const groupLabel = pos ? `${posFullName[pos]} (${pos})` : 'Sem posição capturada';
+        addGroupRow(tbody, groupIdx, groupLabel, 17, true);
         lastPos = pos;
       }
 
@@ -1609,15 +2521,28 @@ async function loadPlaneamento(){
 
       const cD = calc('distancia'), cH = calc('hsr'), cS = calc('sprint'), cA = calc('acc_dec');
       const tr = document.createElement('tr');
+      tr.dataset.groupId = groupIdx;
+      tr.style.display = 'none'; // grupos começam colapsados (ver addGroupRow)
       const rawCell = (c) => c.rawTarget!=null ? c.rawTarget : c.target;
       const adjCell = (c) => c.wasAdjusted
         ? `<span style="color:#f5f7f5;font-weight:600;">${c.target}</span>`
         : (protectedDay ? `<span style="color:var(--blue)">protegido</span>` : `<span style="color:var(--muted)">= alvo</span>`);
+      // Valor real do dia, quando já existe GPS carregado para esse dia -- só faz sentido para
+      // dias já passados/treinados; dias futuros mostram "—".
+      const realOf = (vkey, target) => {
+        const actual = gps[player] && gps[player][day.data] ? gps[player][day.data][vkey] : null;
+        if(actual==null) return '<span style="color:var(--muted)">—</span>';
+        const rounded = Math.round(actual);
+        if(target==null || target==='—') return rounded;
+        const pctOfTarget = Math.round(100*actual/target);
+        const color = (pctOfTarget>=85 && pctOfTarget<=115) ? 'var(--green)' : (pctOfTarget<70 || pctOfTarget>130 ? 'var(--red)' : 'var(--yellow)');
+        return `<span style="color:${color};font-weight:600;">${rounded}</span> <span style="color:var(--muted);font-size:10px;">(${pctOfTarget}%)</span>`;
+      };
       tr.innerHTML = `<td>${player}</td>
-        <td>${rawCell(cD)}</td><td>${adjCell(cD)}</td><td>${devPill(cD.devPct)}</td>
-        <td>${rawCell(cH)}</td><td>${adjCell(cH)}</td><td>${devPill(cH.devPct)}</td>
-        <td>${rawCell(cS)}</td><td>${adjCell(cS)}</td><td>${devPill(cS.devPct)}</td>
-        <td>${rawCell(cA)}</td><td>${adjCell(cA)}</td><td>${devPill(cA.devPct)}</td>`;
+        <td>${rawCell(cD)}</td><td>${adjCell(cD)}</td><td>${realOf('distancia', cD.target)}</td><td>${devPill(cD.devPct)}</td>
+        <td>${rawCell(cH)}</td><td>${adjCell(cH)}</td><td>${realOf('hsr', cH.target)}</td><td>${devPill(cH.devPct)}</td>
+        <td>${rawCell(cS)}</td><td>${adjCell(cS)}</td><td>${realOf('sprint', cS.target)}</td><td>${devPill(cS.devPct)}</td>
+        <td>${rawCell(cA)}</td><td>${adjCell(cA)}</td><td>${realOf('acc_dec', cA.target)}</td><td>${devPill(cA.devPct)}</td>`;
       tbody.appendChild(tr);
     }
   }catch(e){
@@ -1681,6 +2606,19 @@ const DEFAULT_DAY_PROFILES = {
   JOGO:   {distancia_pct:215, hsr_pct:252, sprint_pct:222, acc_dec_pct:199},
 };
 const PROFILE_LABELS = {TENSAO:'Tensão', DURMM:'Duração--', DURM:'Duração-', DURP:'Duração +', DURPP:'Duração ++', DURPPP:'Duração +++', VELOC:'Velocidade', ATIV:'Ativação', REC:'Recuperação', FOLGA:'Folga', JOGO:'Jornada (jogo)'};
+// "Jornada (jogo)" e "Folga" ficam sempre no topo da lista, bem destacados (são os tipos de dia
+// mais importantes a acertar e antes ficavam no fundo da lista, fáceis de saltar por engano).
+// Declarado aqui (perto de PROFILE_LABELS, de que depende) e não mais abaixo -- populateCalDayTypeSelect()
+// é chamada logo a seguir a definir a UI, muito antes de chegar a este ponto do ficheiro, e "const"
+// não sobe (TDZ): se ficasse mais abaixo, essa chamada rebentava com "Cannot access before initialization"
+// e travava a execução do resto do script (foi o bug que também partia o dashboard).
+const DAY_TYPE_SELECT_ORDER = ['JOGO','FOLGA', ...Object.keys(PROFILE_LABELS).filter(k=>k!=='JOGO' && k!=='FOLGA')];
+// Cor por tipo de dia -- usada nas "pills" do calendário de mês do Dashboard.
+const DAY_TYPE_COLORS = {
+  JOGO:'var(--blue)', FOLGA:'var(--muted)', TENSAO:'var(--red)', ATIV:'var(--yellow)',
+  REC:'var(--green2)', VELOC:'var(--green)', DURMM:'var(--green2)', DURM:'var(--green2)',
+  DURP:'var(--green)', DURPP:'var(--green)', DURPPP:'var(--yellow)',
+};
 
 async function resetDayProfiles(){
   if(!confirm('Isto apaga TUDO relacionado com o calendário e as percentagens guardadas (calibração e calendário personalizado) e reconstrói do zero com os valores por defeito corretos. Se tinhas um calendário carregado por ficheiro, tens de o carregar outra vez depois. Continuar?')) return;
@@ -1719,7 +2657,7 @@ async function calibrateDayProfiles(){
     const distinctDates = {TENSAO:new Set(), DURMM:new Set(), DURM:new Set(), DURP:new Set(), DURPP:new Set(), DURPPP:new Set(), VELOC:new Set(), ATIV:new Set(), REC:new Set()};
     let datesUsed = 0;
     for(const day of ROADMAP){
-      const key = classifyDayLabel(day.label);
+      const key = dayTypeKey(day);
       if(!collected[key]) continue; // ignora FOLGA e JOGO (já calibrados à parte / sempre 0)
       const metrics = await computeAllMetrics(day.data);
       let anyPlayerCounted = false;
@@ -1765,7 +2703,7 @@ async function calibrateDayProfiles(){
     }
     // reaplica os novos perfis a cada entrada do ROADMAP (mantendo FOLGA/JOGO como estão)
     for(const day of ROADMAP){
-      const key = classifyDayLabel(day.label);
+      const key = dayTypeKey(day);
       if(collected[key]){
         day.distancia_pct = DAY_PROFILES[key].distancia_pct;
         day.hsr_pct = DAY_PROFILES[key].hsr_pct;
@@ -1821,6 +2759,14 @@ function classifyDayLabel(label){
   if(l.includes('+')) return 'DURP';
   if(l.includes('--')) return 'DURMM';
   return 'DURM';
+}
+// Tipo real de um dia do ROADMAP: usa o campo "key" guardado explicitamente quando existe (fiável
+// sempre, mesmo que a nota/label não contenha nenhuma palavra reconhecível, ex. "J1 - Fafe (F)"
+// não contém "jogo"/"jornada" nem bate com /jp\d/), e só cai para adivinhar a partir do texto do
+// label (classifyDayLabel) em dias antigos, guardados antes deste campo existir.
+function dayTypeKey(day){
+  if(!day) return null;
+  return day.key || classifyDayLabel(day.label);
 }
 function excelSerialToDateStr(v){
   if(v instanceof Date) return v.toISOString().slice(0,10);
@@ -1899,7 +2845,7 @@ function processRoadmapRows(rows){
     const profileKey = classifyDayLabel(pd.label);
     const isJogo = profileKey==='JOGO';
     if(isJogo) matchCount++;
-    newRoadmap.push({ data: pd.data, md: isJogo?'MD':'', label: pd.label, ...DAY_PROFILES[profileKey] });
+    newRoadmap.push({ data: pd.data, md: isJogo?'MD':'', label: pd.label, key: profileKey, ...DAY_PROFILES[profileKey] });
   }
   newRoadmap.sort((a,b)=> a.data.localeCompare(b.data));
   return {newRoadmap, isSimpleFormat, matchCount};
@@ -2012,7 +2958,7 @@ async function loadCycleSummary(){
 
     const sums = {};
     for(const day of cycleDays){
-      const key = classifyDayLabel(day.label);
+      const key = dayTypeKey(day);
       if(!sums[key]) sums[key] = {distancia:0,hsr:0,sprint:0,acc_dec:0,count:0};
       for(const player in gps){
         if(gps[player][day.data]){
@@ -2134,7 +3080,7 @@ async function loadProgressao(){
       }
     });
 
-    const roadmapGameDates = ROADMAP.filter(r=>classifyDayLabel(r.label)==='JOGO').map(r=>r.data);
+    const roadmapGameDates = ROADMAP.filter(r=>dayTypeKey(r)==='JOGO').map(r=>r.data);
     const manualGameDates = Object.keys(sessions).filter(d=>sessions[d].tipo==='Jogo');
     const gameDates = [...new Set([...roadmapGameDates, ...manualGameDates])].sort();
 
@@ -2184,7 +3130,9 @@ async function loadProgressao(){
   }
 }
 
-loadSavedRoadmap().then(()=>loadDashboard());
+loadSavedRoadmap().then(()=>{ loadDashboard(); loadInicio(); });
+populateCalDayTypeSelect();
+renderCalWeekdayGrid();
 
 document.getElementById('dayPicker').addEventListener('change', loadPlaneamento);
 
@@ -2194,15 +3142,674 @@ document.querySelectorAll('.tab').forEach(tab=>{
     document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
     tab.classList.add('active');
     document.getElementById('panel-'+tab.dataset.tab).classList.add('active');
-    if(tab.dataset.tab==='hoje') loadDashboard();
+    if(tab.dataset.tab==='inicio') loadInicio();
+    if(tab.dataset.tab==='acwr') loadDashboard();
+    if(tab.dataset.tab==='wellness') loadWellness();
+    if(tab.dataset.tab==='pse') loadPseTab();
+    if(tab.dataset.tab==='velocidade') loadVelocidade();
     if(tab.dataset.tab==='planeamento'){ populateDayPicker(); loadPlaneamento(); }
-    if(tab.dataset.tab==='equipa'){ renderRoadmapTable(); }
-    if(tab.dataset.tab==='progressao'){ loadProgressao(); loadCycleSummary(); }
+    if(tab.dataset.tab==='calendario') renderCalTable();
+    if(tab.dataset.tab==='equipa'){ renderRoadmapTable(); loadCycleSummary(); }
+    if(tab.dataset.tab==='progressao'){ loadProgressao(); }
     if(tab.dataset.tab==='benchmark') renderBenchmarkTables();
     if(tab.dataset.tab==='tecnico') loadTecnico();
     if(tab.dataset.tab==='history') loadHistory();
   });
 });
+
+// ---------- Secções colapsáveis (genérico, aplica-se a todas as abas) ----------
+// Cada .card vira a sua própria secção colapsável; fora dos .card, cada <h2> agrupa os
+// elementos seguintes (até ao próximo <h2> ou .card) numa secção colapsável com esse título,
+// clicável individualmente (sem botão global "colapsar tudo" -- cada caixa colapsa-se sozinha).
+// Conteúdo antes da 1ª secção (normalmente uma nota introdutória) fica sempre visível.
+function collapsifyPanels(){
+  document.querySelectorAll('.panel').forEach(panel=>{
+    if(panel.dataset.collapsified) return;
+    panel.dataset.collapsified = '1';
+    const children = Array.from(panel.children);
+    const frag = document.createDocumentFragment();
+    const deferredNotes = []; // notas de explicação -- sempre visíveis, movidas para o fundo do painel
+    let openDetails = null, openBody = null;
+    function closeCurrent(){ if(openDetails) frag.appendChild(openDetails); openDetails=null; openBody=null; }
+    for(const child of children){
+      if(child.classList && child.classList.contains('note') && !child.classList.contains('keeptop')){
+        deferredNotes.push(child);
+        continue;
+      }
+      if(child.classList && child.classList.contains('nocollapse')){
+        closeCurrent();
+        frag.appendChild(child);
+        continue;
+      }
+      if(child.classList && child.classList.contains('card')){
+        closeCurrent();
+        const h3 = child.querySelector('h3');
+        const title = h3 ? h3.textContent.trim() : 'Secção';
+        const details = document.createElement('details');
+        details.className = 'csection'; details.open = false;
+        const summary = document.createElement('summary'); summary.textContent = title;
+        const body = document.createElement('div'); body.className = 'csectionBody';
+        body.appendChild(child);
+        details.appendChild(summary); details.appendChild(body);
+        frag.appendChild(details);
+      } else if(child.tagName === 'H2'){
+        closeCurrent();
+        openDetails = document.createElement('details');
+        openDetails.className = 'csection'; openDetails.open = false;
+        const summary = document.createElement('summary'); summary.textContent = child.textContent.trim();
+        openBody = document.createElement('div'); openBody.className='csectionBody';
+        openDetails.appendChild(summary); openDetails.appendChild(openBody);
+      } else if(openBody){
+        openBody.appendChild(child);
+      } else {
+        frag.appendChild(child);
+      }
+    }
+    closeCurrent();
+    deferredNotes.forEach(n=> frag.appendChild(n));
+    panel.appendChild(frag);
+    makeReorderable(panel, panel.id);
+  });
+}
+// Reordenar caixas por drag-and-drop -- aplica-se aos filhos diretos de "container" (secções
+// colapsáveis, cartões sempre abertos, etc.). A ordem escolhida fica guardada no browser
+// (localStorage), por painel/contentor, e é reaplicada sempre que a página recarrega.
+function makeReorderable(container, storageKey){
+  if(!container || !storageKey) return;
+  const key = 'boxOrder_' + storageKey;
+  const isBox = el => el.nodeType===1 && (el.tagName==='DETAILS' || (el.classList && el.classList.contains('card')));
+  const boxes = Array.from(container.children).filter(isBox);
+  const nonBoxes = Array.from(container.children).filter(el=>!isBox(el));
+  boxes.forEach((el, i)=>{
+    if(!el.dataset.boxid){
+      const label = (el.querySelector('summary')||el.querySelector('h3'))?.textContent?.trim() || el.id || ('box'+i);
+      el.dataset.boxid = label;
+    }
+  });
+  // Aplica a ordem guardada só às caixas (details/.card); qualquer outro elemento solto no
+  // contentor (ex.: o botão "Últimos dados") é sempre reposto no fim, para nunca ficar preso
+  // entre caixas reordenadas ou saltar para o topo.
+  try{
+    const saved = JSON.parse(localStorage.getItem(key)||'null');
+    if(saved && Array.isArray(saved)){
+      const map = {}; boxes.forEach(el=> map[el.dataset.boxid]=el);
+      saved.forEach(id=>{ if(map[id]) container.appendChild(map[id]); });
+      boxes.forEach(el=>{ if(!saved.includes(el.dataset.boxid)) container.appendChild(el); }); // caixas novas, sem posição guardada
+    }
+  }catch(e){}
+  nonBoxes.forEach(el=> container.appendChild(el));
+  function saveOrder(){
+    const order = Array.from(container.children).filter(isBox).map(el=>el.dataset.boxid);
+    localStorage.setItem(key, JSON.stringify(order));
+  }
+  // Drag-and-drop nativo, iniciado só a partir de um "pegador" real (⠿), não da caixa inteira --
+  // arrastar a partir de texto normal entra em conflito com a seleção de texto do browser e o
+  // gesto de arrastar nem chega a começar. Importante: o Firefox recusa-se a completar um drag se
+  // dragstart não chamar dataTransfer.setData(...). Só reordenamos no 'drop' (não a meio do
+  // dragover), que é frágil e em vários browsers cancela o drag a meio.
+  let dragEl = null;
+  boxes.forEach(el=>{
+    el.classList.add('reorderable');
+    const titleEl = el.querySelector(':scope > summary') || el.querySelector(':scope > h3');
+    let handle = el.querySelector(':scope > .dragHandle');
+    if(!handle && titleEl){
+      handle = document.createElement('span');
+      handle.className = 'dragHandle';
+      handle.textContent = '⠿';
+      handle.title = 'Arrastar para reordenar';
+      handle.setAttribute('draggable','true');
+      titleEl.appendChild(handle);
+    }
+    if(!handle) return;
+    handle.addEventListener('dragstart', (e)=>{
+      dragEl = el;
+      el.classList.add('dragging');
+      if(e.dataTransfer){
+        e.dataTransfer.effectAllowed = 'move';
+        try{ e.dataTransfer.setData('text/plain', el.dataset.boxid || ''); }catch(err){}
+      }
+    });
+    handle.addEventListener('dragend', ()=>{ el.classList.remove('dragging'); dragEl = null; });
+    el.addEventListener('dragover', (e)=>{
+      if(!dragEl) return;
+      e.preventDefault();
+      if(e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+      el.classList.add('dragOver');
+    });
+    el.addEventListener('dragleave', ()=>{ el.classList.remove('dragOver'); });
+    el.addEventListener('drop', (e)=>{
+      if(!dragEl) return;
+      e.preventDefault();
+      e.stopPropagation();
+      el.classList.remove('dragOver');
+      if(dragEl===el) return;
+      const rect = el.getBoundingClientRect();
+      // Em contentores em fila (flex-wrap, ex. dashboard) as caixas ficam lado a lado, por isso o
+      // "antes/depois" tem de olhar à posição horizontal do largar; nos contentores normais
+      // (empilhados, uma caixa por linha) continua a olhar à posição vertical, como sempre foi.
+      const cs = getComputedStyle(container);
+      const isRowLayout = cs.display==='flex' && cs.flexWrap==='wrap';
+      const after = isRowLayout
+        ? (e.clientX - rect.left) > rect.width/2
+        : (e.clientY - rect.top) > rect.height/2;
+      container.insertBefore(dragEl, after ? el.nextSibling : el);
+      saveOrder();
+    });
+  });
+  makeResizable(container, storageKey);
+}
+// Permite arrastar o canto de cada caixa para ajustar largura/altura à vontade (CSS resize
+// nativo). O tamanho escolhido fica guardado no browser (localStorage) por caixa, e é reaplicado
+// da próxima vez que a página carrega.
+function makeResizable(container, storageKey){
+  const key = 'boxSize_' + storageKey;
+  const isBox = el => el.nodeType===1 && (el.tagName==='DETAILS' || (el.classList && el.classList.contains('card')));
+  let sizes = {};
+  try{ sizes = JSON.parse(localStorage.getItem(key)||'{}') || {}; }catch(e){}
+  Array.from(container.children).filter(isBox).forEach(el=>{
+    el.classList.add('resizableBox');
+    const saved = sizes[el.dataset.boxid];
+    if(saved && saved.w) el.style.width = saved.w;
+    if(saved && saved.h) el.style.height = saved.h;
+    if(el.__resizeObs) return; // já tem observer (evita duplicar em re-renders)
+    let debounce = null;
+    const obs = new ResizeObserver(()=>{
+      clearTimeout(debounce);
+      debounce = setTimeout(()=>{
+        try{
+          const cur = JSON.parse(localStorage.getItem(key)||'{}') || {};
+          cur[el.dataset.boxid] = { w: el.style.width || null, h: el.style.height || null };
+          localStorage.setItem(key, JSON.stringify(cur));
+        }catch(e){}
+      }, 400);
+    });
+    obs.observe(el);
+    el.__resizeObs = obs;
+  });
+}
+// Layout totalmente livre (só para o Dashboard): cada caixa fica position:absolute dentro do
+// contentor, e pode ser arrastada para qualquer x/y em pixels -- lado a lado, desalinhada, com
+// espaços em branco, sobreposta se o utilizador quiser. Não usa a API nativa de drag-and-drop
+// (essa só dá "antes/depois de outro elemento", não coordenadas livres) -- usa mousedown/mousemove/
+// mouseup manual a partir do pegador (⠿), igual ao makeReorderable mas escrevendo left/top em vez
+// de reordenar o DOM. A posição de cada caixa fica guardada por caixa em localStorage.
+function makeFreeLayout(container, storageKey){
+  if(!container || !storageKey) return;
+  const posKey = 'boxPos_' + storageKey;
+  const sizeKey = 'boxSize_' + storageKey;
+  const isBox = el => el.nodeType===1 && (el.tagName==='DETAILS' || (el.classList && el.classList.contains('card')));
+  const boxes = Array.from(container.children).filter(isBox);
+  boxes.forEach((el,i)=>{
+    if(!el.dataset.boxid){
+      const label = (el.querySelector('summary')||el.querySelector('h3'))?.textContent?.trim() || el.id || ('box'+i);
+      el.dataset.boxid = label;
+    }
+    el.classList.add('resizableBox');
+  });
+  let sizes = {}; try{ sizes = JSON.parse(localStorage.getItem(sizeKey)||'{}')||{}; }catch(e){}
+  boxes.forEach(el=>{
+    const s = sizes[el.dataset.boxid];
+    if(s && s.w) el.style.width = s.w;
+    if(s && s.h) el.style.height = s.h;
+  });
+
+  let positions = {}; try{ positions = JSON.parse(localStorage.getItem(posKey)||'{}')||{}; }catch(e){}
+  const gap = 16;
+  const containerWidth = container.clientWidth || 1200;
+  let curX = 0, curY = 0, rowH = 0;
+  boxes.forEach(el=>{
+    const saved = positions[el.dataset.boxid];
+    if(saved && typeof saved.x==='number' && typeof saved.y==='number'){
+      el.style.left = saved.x + 'px';
+      el.style.top = saved.y + 'px';
+      return;
+    }
+    // Sem posição guardada ainda (1ª vez, ou caixa nova): posiciona em fluxo tipo "fila", só como
+    // ponto de partida -- a partir daqui o utilizador pode arrastar para onde quiser.
+    const w = parseInt(el.style.width) || el.offsetWidth || 380;
+    const h = parseInt(el.style.height) || el.offsetHeight || 160;
+    if(curX>0 && curX + w > containerWidth){ curX = 0; curY += rowH + gap; rowH = 0; }
+    el.style.left = curX + 'px';
+    el.style.top = curY + 'px';
+    positions[el.dataset.boxid] = {x:curX, y:curY};
+    curX += w + gap;
+    rowH = Math.max(rowH, h);
+  });
+  localStorage.setItem(posKey, JSON.stringify(positions));
+
+  function updateContainerHeight(){
+    let maxBottom = 0;
+    boxes.forEach(el=>{
+      const top = parseInt(el.style.top)||0;
+      maxBottom = Math.max(maxBottom, top + el.offsetHeight);
+    });
+    container.style.height = (maxBottom + 8) + 'px';
+  }
+  updateContainerHeight();
+
+  function savePos(){
+    const pos = {};
+    boxes.forEach(el=>{ pos[el.dataset.boxid] = {x: parseInt(el.style.left)||0, y: parseInt(el.style.top)||0}; });
+    localStorage.setItem(posKey, JSON.stringify(pos));
+  }
+  function saveSize(el){
+    let cur = {}; try{ cur = JSON.parse(localStorage.getItem(sizeKey)||'{}')||{}; }catch(e){}
+    cur[el.dataset.boxid] = {w: el.style.width||null, h: el.style.height||null};
+    localStorage.setItem(sizeKey, JSON.stringify(cur));
+  }
+
+  boxes.forEach(el=>{
+    const titleEl = el.querySelector(':scope > summary') || el.querySelector(':scope > h3');
+    let handle = el.querySelector(':scope > .dragHandle');
+    if(!handle && titleEl){
+      handle = document.createElement('span');
+      handle.className = 'dragHandle';
+      handle.textContent = '⠿';
+      handle.title = 'Arrastar para mover';
+      titleEl.appendChild(handle);
+    }
+    if(handle){
+      handle.onmousedown = (e)=>{
+        e.preventDefault();
+        const startX = e.clientX, startY = e.clientY;
+        const startLeft = parseInt(el.style.left)||0, startTop = parseInt(el.style.top)||0;
+        el.classList.add('dragging');
+        el.style.zIndex = 50;
+        function onMove(ev){
+          const dx = ev.clientX - startX, dy = ev.clientY - startY;
+          el.style.left = Math.max(0, startLeft + dx) + 'px';
+          el.style.top = Math.max(0, startTop + dy) + 'px';
+          updateContainerHeight();
+        }
+        function onUp(){
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+          el.classList.remove('dragging');
+          el.style.zIndex = '';
+          savePos();
+          updateContainerHeight();
+        }
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      };
+    }
+    if(el.__resizeObs) return; // já tem observer (evita duplicar em re-renders)
+    let debounce = null;
+    const obs = new ResizeObserver(()=>{
+      clearTimeout(debounce);
+      debounce = setTimeout(()=>{ saveSize(el); updateContainerHeight(); }, 300);
+    });
+    obs.observe(el);
+    el.__resizeObs = obs;
+  });
+}
+collapsifyPanels();
+
+// ---------- Início (dashboard resumo) ----------
+// Formata uma data como AAAA-MM-DD usando os componentes LOCAIS (nunca .toISOString(), que
+// converte para UTC e desloca a data em 1 dia sempre que o fuso horário local está à frente de
+// UTC -- ex.: Portugal no horário de verão, UTC+1 -- fazendo a meia-noite local cair no dia
+// anterior em UTC). Este foi o bug que desfasava o calendário em 1 dia.
+function toLocalISODate(d){
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function weekRangeOf(dateStr){
+  const d = new Date(dateStr+'T00:00:00');
+  const dow = (d.getDay()+6)%7; // 0=Segunda
+  const monday = new Date(d); monday.setDate(d.getDate()-dow);
+  const days = [];
+  for(let i=0;i<7;i++){ const dd=new Date(monday); dd.setDate(monday.getDate()+i); days.push(toLocalISODate(dd)); }
+  return days;
+}
+// Caixas do dashboard: nunca colapsáveis (sem <details>) -- mostram só o número por defeito;
+// clicar num número revela a lista de jogadores dessa categoria, dentro da própria caixa.
+window.homeRevealData = window.homeRevealData || {};
+function showReveal(boxId, key){
+  const box = document.getElementById(boxId);
+  if(!box) return;
+  window.homeRevealData = window.homeRevealData || {};
+  box.style.display = 'block';
+  box.innerHTML = window.homeRevealData[key] || '<span style="color:var(--muted)">Nenhum jogador nesta categoria.</span>';
+}
+function homeStat(count, color, label, boxId, key, namesHtml){
+  // Defensivo: garante que o objeto existe mesmo que esta função seja chamada antes da
+  // inicialização de window.homeRevealData mais abaixo no script (nunca deve acontecer, mas
+  // evita rebentar o dashboard inteiro com "Cannot set properties of undefined" se acontecer).
+  window.homeRevealData = window.homeRevealData || {};
+  window.homeRevealData[key] = namesHtml;
+  return `<div class="homeStat" onclick="showReveal('${boxId}','${key}')"><div class="num" style="color:${color}">${count}</div><div class="lbl">${label}</div></div>`;
+}
+function homeBox(title, borderColor, statsHtml, revealId){
+  return `<div class="card nocollapse" style="border-left:4px solid ${borderColor};">
+    <h3>${title}</h3>
+    <div class="homeGrid">${statsHtml}</div>
+    <div id="${revealId}" class="cargabox" style="display:none;margin-top:10px;"></div>
+  </div>`;
+}
+async function loadInicio(){
+  const el = document.getElementById('homeAlertsBox');
+  try{
+    const gps = await getSeries('series_gps');
+    const wellness = await getSeries('series_wellness');
+    const pse = await getSeries('series_pse');
+    const allDates = new Set();
+    Object.values(gps).forEach(pd=>Object.keys(pd).forEach(d=>allDates.add(d)));
+    Object.values(wellness).forEach(pd=>Object.keys(pd).forEach(d=>allDates.add(d)));
+    const validDates = [...allDates].filter(isValidDateStr);
+    let n2=0,n1=0,n0=0, results=[], metrics={};
+    let lastDate = validDates.length ? validDates.sort().slice(-1)[0] : '—';
+    if(validDates.length){
+      metrics = await computeAllMetrics(lastDate);
+      results = classifyPlayers(metrics, lastDate);
+      n2 = results.filter(r=>r.level===2).length;
+      n1 = results.filter(r=>r.level===1).length;
+      n0 = results.filter(r=>r.level===0).length;
+    }
+    // Calendário: vista de mês completa, estilo app de calendário de telemóvel (navegação por
+    // mês, hoje destacado, uma "pill" colorida por dia com o tipo de sessão). Usa a data REAL de
+    // hoje (todayStr), não a data de referência dos cálculos de carga (getRefDate = último dia com
+    // dados carregados) -- usar getRefDate aqui fazia esta caixa parecer "desatualizada".
+    const calToday = todayStr();
+    const weekCalBoxHtml = `<div class="card nocollapse">
+      <h3>Calendário</h3>
+      ${buildMonthCalendarHtml(calToday, window.__dashCalMonthOffset||0)}
+    </div>`;
+
+    // ---------- Alertas (secção única, agrupando por categoria: uma caixa colapsável por
+    // categoria/aba. Nenhuma caixa é colapsável -- mostram sempre o número; clicar num número
+    // revela a lista de jogadores dentro da própria caixa (ver homeStat/homeBox/showReveal acima).
+    const nameList = (names) => names.length ? names.join(', ') : '<span style="color:var(--muted)">Nenhum jogador nesta categoria.</span>';
+
+    const falarNames = results.filter(r=>r.level===2).map(r=>r.name);
+    const vigiarNames = results.filter(r=>r.level===1).map(r=>r.name);
+    const semNames = results.filter(r=>r.level===0).map(r=>r.name);
+
+    const wellFalar = [], wellVigiar = [];
+    for(const player in metrics){
+      const m = metrics[player];
+      let lvl = 0;
+      if(m.wellZ!==undefined){ if(m.wellZ<-1.5) lvl=2; else if(m.wellZ<-0.75) lvl=1; }
+      if(m.pain && m.pain.daysAgo===0){ if(m.pain.maxGrau>=7) lvl=Math.max(lvl,2); else if(m.pain.maxGrau>=4) lvl=Math.max(lvl,1); }
+      if(lvl===2) wellFalar.push(player); else if(lvl===1) wellVigiar.push(player);
+    }
+    const pseFalar = [], pseVigiar = [];
+    for(const player in metrics){
+      const m = metrics[player];
+      if(!m.srpe) continue;
+      if(m.srpe.ratio>1.5 || m.srpe.ratio<0.5) pseFalar.push(player);
+      else if(m.srpe.ratio>1.3 || m.srpe.ratio<0.8) pseVigiar.push(player);
+    }
+    const brokenThisWeek = [], staleAlerts = [];
+    for(const player in metrics){
+      const sr = metrics[player].speedRecord;
+      if(!sr) continue;
+      if(sr.daysAgoRecord<=7) brokenThisWeek.push(`${player} (${sr.value} km/h)`);
+      if(sr.daysAgo90==null || sr.daysAgo90>7) staleAlerts.push(player);
+    }
+
+    // Benchmark de equipa vs Liga 3 (jogos oficiais) -- duas leituras: a média de TODOS os jogos
+    // (desvio >20%, fora de 80-120%, para qualquer lado) e só o ÚLTIMO jogo (alerta apenas se
+    // ficou ABAIXO de 80% da Liga 3 -- um jogo isolado acima do normal não é alerta).
+    const realGame = await computeRealGameAverages();
+    const lastGame = await computeLastGameAverages();
+    const varLabels = {distancia:'Distância', hsr:'HSR', sprint:'Sprint', acc_dec:'Acc/Dec'};
+    const benchAlertsTotal = [];
+    if(realGame){
+      for(const key of ['distancia','hsr','sprint','acc_dec']){
+        if(realGame[key]==null) continue;
+        const pct = Math.round(100*realGame[key]/BENCHMARK[key].liga3.mid);
+        if(pct<80 || pct>120) benchAlertsTotal.push(`${varLabels[key]} a ${pct}% da Liga 3`);
+      }
+    }
+    const benchAlertsLastGame = [];
+    if(lastGame){
+      for(const key of ['distancia','hsr','sprint','acc_dec']){
+        if(lastGame[key]==null) continue;
+        const pct = Math.round(100*lastGame[key]/BENCHMARK[key].liga3.mid);
+        if(pct<80) benchAlertsLastGame.push(`${varLabels[key]} a ${pct}% da Liga 3 (${lastGame.date})`);
+      }
+    }
+
+    // Targets coletivos vs real (dia mais recente com dados, lastDate) -- desvio a nível de
+    // equipa por variável, e nº de jogadores cuja média das 4 variáveis ficou abaixo de 80% do
+    // seu alvo individual reajustado nesse dia.
+    const planDay = ROADMAP.find(r=>r.data===lastDate);
+    const teamDiffAlerts = [];
+    const indivDeviation = []; // desvio >20% do alvo individual, para qualquer lado (abaixo de 80% ou acima de 120%)
+    if(planDay && !isProtectedDay(planDay)){
+      const varKeys = ['distancia','hsr','sprint','acc_dec'];
+      const teamSums = {}; varKeys.forEach(k=> teamSums[k]={real:0,target:0});
+      for(const player in metrics){
+        const m = metrics[player];
+        if(!m.multimetric) continue;
+        const playerReal = gps[player] && gps[player][lastDate] ? gps[player][lastDate] : null;
+        if(!playerReal) continue;
+        let sumPct=0, cnt=0;
+        for(const vkey of varKeys){
+          const v = m.multimetric[vkey];
+          if(!v) continue;
+          const target = v.chronic_avg * planDay[vkey+'_pct']/100;
+          const real = playerReal[vkey];
+          if(real==null || !target) continue;
+          teamSums[vkey].real += real; teamSums[vkey].target += target;
+          sumPct += 100*real/target; cnt++;
+        }
+        if(cnt>0){
+          const avgPct = Math.round(sumPct/cnt);
+          if(avgPct<80 || avgPct>120) indivDeviation.push(`${player} (${avgPct}%)`);
+        }
+      }
+      for(const vkey of varKeys){
+        const s = teamSums[vkey];
+        if(!s.target) continue;
+        const pct = Math.round(100*s.real/s.target);
+        if(pct<80 || pct>120) teamDiffAlerts.push(`${varLabels[vkey]} a ${pct}% do alvo coletivo (${lastDate})`);
+      }
+    }
+
+    document.getElementById('homeAlertsBox').innerHTML =
+      weekCalBoxHtml +
+      homeBox('📈 ACWR', 'var(--blue)',
+        homeStat(falarNames.length,'var(--red)','Falar antes de treinar','reveal_acwr','acwr_falar', nameList(falarNames)) +
+        homeStat(vigiarNames.length,'var(--yellow)','Vigiar / confirmar','reveal_acwr','acwr_vigiar', nameList(vigiarNames)) +
+        homeStat(semNames.length,'var(--green)','Sem alertas','reveal_acwr','acwr_sem', nameList(semNames)),
+        'reveal_acwr') +
+      homeBox('🩺 Wellness', 'var(--blue)',
+        homeStat(wellFalar.length,'var(--red)','Falar','reveal_well','well_falar', nameList(wellFalar)) +
+        homeStat(wellVigiar.length,'var(--yellow)','Vigiar','reveal_well','well_vigiar', nameList(wellVigiar)),
+        'reveal_well') +
+      homeBox('💪 PSE', 'var(--blue)',
+        homeStat(pseFalar.length,'var(--red)','Falar','reveal_pse','pse_falar', nameList(pseFalar)) +
+        homeStat(pseVigiar.length,'var(--yellow)','Vigiar','reveal_pse','pse_vigiar', nameList(pseVigiar)),
+        'reveal_pse') +
+      homeBox('🏃 Velocidade Máxima', 'var(--blue)',
+        homeStat(brokenThisWeek.length,'var(--green)','Recordes esta semana','reveal_vel','vel_rec', nameList(brokenThisWeek)) +
+        homeStat(staleAlerts.length,'var(--red)','<90% há mais de 7 dias','reveal_vel','vel_stale', nameList(staleAlerts)),
+        'reveal_vel') +
+      homeBox('👥 Targets Coletivos — desvio do dia anterior', 'var(--red)',
+        homeStat(teamDiffAlerts.length,'var(--red)','Variáveis fora de ±20% do alvo coletivo','reveal_team','team_diff', nameList(teamDiffAlerts)),
+        'reveal_team') +
+      homeBox('🎯 Alvo individual — desvio >20%', 'var(--red)',
+        homeStat(indivDeviation.length,'var(--red)',`Jogadores fora de ±20% do alvo em ${lastDate}`,'reveal_indiv','indiv_below', nameList(indivDeviation)),
+        'reveal_indiv') +
+      homeBox('⚽ Benchmark de jogo — desvio vs. Liga 3', 'var(--red)',
+        homeStat(benchAlertsTotal.length,'var(--red)','Total: variáveis fora de ±20% da Liga 3','reveal_bench','bench_total', nameList(benchAlertsTotal)) +
+        homeStat(benchAlertsLastGame.length,'var(--red)','Último jogo: variáveis <80% da Liga 3','reveal_bench','bench_last', nameList(benchAlertsLastGame)),
+        'reveal_bench');
+    document.getElementById('homeUploadLink').innerHTML =
+      `<div><button class="secondary" onclick="document.querySelector('[data-tab=upload]').click()">Últimos dados: ${lastDate} — Upload diário</button></div>`;
+    makeFreeLayout(document.getElementById('homeAlertsBox'), 'homeAlertsBox');
+  }catch(e){
+    el.innerHTML = `<div class="note" style="border-color:rgba(200,84,80,0.4)">Erro a calcular o resumo: ${e.message}</div>`;
+    console.error(e);
+  }
+}
+
+// ---------- Calendário editável ----------
+function dayTypeOptionsHtml(defaultKey){
+  return DAY_TYPE_SELECT_ORDER.map(k=>`<option value="${k}"${k===defaultKey?' selected':''}>${(k==='JOGO'||k==='FOLGA') ? '⭐ ' : ''}${PROFILE_LABELS[k]}</option>`).join('');
+}
+function populateCalDayTypeSelect(){
+  const sel = document.getElementById('calDayType');
+  sel.innerHTML = dayTypeOptionsHtml();
+}
+function renderCalWeekdayGrid(){
+  const wrap = document.getElementById('calWeekdayGrid');
+  const dias = ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
+  wrap.innerHTML = dias.map((d,i)=>`
+    <div>
+      <label>${d}</label>
+      <select id="calWeekday${i}">${dayTypeOptionsHtml('DURM')}</select>
+    </div>`).join('');
+}
+function keyToDefaultLabel(key){ return PROFILE_LABELS[key] || key; }
+async function upsertRoadmapDay(dateStr, key, note){
+  const profile = DAY_PROFILES[key] || DAY_PROFILES.DURM;
+  // Para dias de jogo, a nota SUBSTITUI o rótulo (não fica só anexada) -- é o texto usado para
+  // distinguir jogo oficial de amigável no Benchmark (getOfficialGameDates() procura "jornada" no
+  // texto). Por isso, para um jogo, escreve algo como "Jornada 1 vs Vitória B" ou "JP1 vs Vitória B".
+  const label = (key==='JOGO' && note) ? note : (note ? `${keyToDefaultLabel(key)} — ${note}` : keyToDefaultLabel(key));
+  const idx = ROADMAP.findIndex(r=>r.data===dateStr);
+  // "key" fica guardado explicitamente (não só implícito no texto do label) -- sem isto, uma nota
+  // como "J1 - Fafe (F)" (sem a palavra "jogo"/"jornada") fazia o dia voltar a ser lido como
+  // Duração- da próxima vez, porque a única forma de saber o tipo era adivinhar a partir do texto.
+  const day = {data: dateStr, md:'', label, key, ...profile};
+  if(idx>=0) ROADMAP[idx] = {...ROADMAP[idx], ...day}; else ROADMAP.push(day);
+  ROADMAP.sort((a,b)=> a.data.localeCompare(b.data));
+  await setSeries('series_roadmap', {roadmap: ROADMAP});
+}
+// Arrastar um dia para outra data (dashboard e aba Calendário) -- troca o conteúdo dos dois dias
+// (tipo, percentagens, etc.), mantendo a data de cada célula fixa. Só troca entre dois dias que já
+// estejam programados (arrastar para uma célula vazia "—" não faz nada, para evitar apagar sem
+// querer). Como as duas grelhas leem sempre do mesmo ROADMAP/série guardada, mudar aqui fica
+// automaticamente refletido na outra assim que essa aba for (re)carregada.
+async function swapRoadmapDays(dateA, dateB){
+  if(!dateA || !dateB || dateA===dateB) return;
+  const idxA = ROADMAP.findIndex(r=>r.data===dateA);
+  const idxB = ROADMAP.findIndex(r=>r.data===dateB);
+  if(idxA<0 || idxB<0) return;
+  const dayA = {...ROADMAP[idxA], data: dateB};
+  const dayB = {...ROADMAP[idxB], data: dateA};
+  ROADMAP[idxA] = dayB;
+  ROADMAP[idxB] = dayA;
+  await setSeries('series_roadmap', {roadmap: ROADMAP});
+}
+let __calDragDate = null, __calJustDragged = false;
+function calDragStart(e, dateStr){
+  __calDragDate = dateStr;
+  __calJustDragged = true;
+  if(e.dataTransfer){ e.dataTransfer.effectAllowed = 'move'; try{ e.dataTransfer.setData('text/plain', dateStr); }catch(err){} }
+}
+function calDragEnd(){
+  setTimeout(()=>{ __calJustDragged = false; }, 200);
+}
+async function calDrop(e, targetDate){
+  e.preventDefault();
+  const source = __calDragDate || (e.dataTransfer && e.dataTransfer.getData('text/plain'));
+  __calDragDate = null;
+  if(!source || source===targetDate) return;
+  await swapRoadmapDays(source, targetDate);
+  if(document.getElementById('homeAlertsBox')) loadInicio();
+  if(document.getElementById('calWeeksGrid')) renderCalWeeksGrid();
+}
+function calCellClick(dateStr, fnName){
+  if(__calJustDragged){ __calJustDragged = false; return; }
+  window[fnName](dateStr);
+}
+async function saveCalendarDay(){
+  const date = document.getElementById('calDayDate').value;
+  const key = document.getElementById('calDayType').value;
+  const note = document.getElementById('calDayNote').value.trim();
+  if(!date){ setStatus('calDayStatus', false, 'Escolhe uma data.'); return; }
+  await upsertRoadmapDay(date, key, note);
+  setStatus('calDayStatus', true, `${date} guardado como "${keyToDefaultLabel(key)}".`);
+  renderCalTable(); populateDayPicker();
+}
+async function deleteCalendarDay(){
+  const date = document.getElementById('calDayDate').value;
+  if(!date){ setStatus('calDayStatus', false, 'Escolhe uma data.'); return; }
+  const idx = ROADMAP.findIndex(r=>r.data===date);
+  if(idx<0){ setStatus('calDayStatus', false, 'Esse dia não existe no calendário.'); return; }
+  ROADMAP.splice(idx,1);
+  await setSeries('series_roadmap', {roadmap: ROADMAP});
+  setStatus('calDayStatus', true, `${date} removido do calendário.`);
+  renderCalTable(); populateDayPicker();
+}
+async function fillCalendarRange(){
+  const start = document.getElementById('calRangeStart').value;
+  const end = document.getElementById('calRangeEnd').value;
+  if(!start || !end || start>end){ setStatus('calRangeStatus', false, 'Escolhe um intervalo de datas válido.'); return; }
+  let d = new Date(start+'T00:00:00');
+  const endD = new Date(end+'T00:00:00');
+  let count = 0;
+  while(d<=endD){
+    const dow = (d.getDay()+6)%7; // 0=Segunda ... 6=Domingo
+    const key = document.getElementById('calWeekday'+dow).value;
+    const dateStr = toLocalISODate(d);
+    await upsertRoadmapDay(dateStr, key, '');
+    count++;
+    d.setDate(d.getDate()+1);
+  }
+  setStatus('calRangeStatus', true, `${count} dia(s) preenchido(s) de ${start} a ${end}.`);
+  renderCalTable(); populateDayPicker();
+}
+function editCalendarDay(dateStr){
+  const day = ROADMAP.find(r=>r.data===dateStr);
+  if(!day) return;
+  const key = dayTypeKey(day);
+  document.getElementById('calDayDate').value = dateStr;
+  document.getElementById('calDayType').value = key;
+  const defaultLabel = keyToDefaultLabel(key);
+  const note = day.label.startsWith(defaultLabel+' — ') ? day.label.slice(defaultLabel.length+3)
+    : (day.label!==defaultLabel ? day.label : '');
+  document.getElementById('calDayNote').value = note;
+}
+// Antes havia aqui também uma lista plana "Todos os dias programados" (tabela #calTable) --
+// removida a pedido (redundante com a grelha semanal abaixo, que já mostra tudo e permite editar
+// clicando em qualquer dia). Mantém-se o nome da função para não ter de mudar todos os sítios que
+// a chamam depois de guardar/apagar/preencher um dia.
+function renderCalTable(){
+  renderCalWeeksGrid();
+}
+// Mostra TODAS as semanas já programadas em formato de grelha semanal (Seg-Dom), como um
+// calendário normal -- agrupa o ROADMAP pela segunda-feira de cada semana.
+function renderCalWeeksGrid(){
+  const wrap = document.getElementById('calWeeksGrid');
+  if(!wrap) return;
+  if(!ROADMAP.length){ wrap.innerHTML = '<div class="note">Ainda não há dias programados.</div>'; return; }
+  const dias = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+  const mondays = new Set();
+  for(const day of ROADMAP){
+    const week = weekRangeOf(day.data);
+    mondays.add(week[0]);
+  }
+  const sortedMondays = [...mondays].sort();
+  // Cada semana fica numa <details> própria, para poder ser ocultada individualmente. Aberta ou
+  // fechada, fica guardado no browser (localStorage) por semana, para a próxima vez que entrares.
+  wrap.innerHTML = sortedMondays.map(monday=>{
+    const week = weekRangeOf(monday);
+    const cells = week.map((d,i)=>{
+      const day = ROADMAP.find(r=>r.data===d);
+      const key = day ? dayTypeKey(day) : null;
+      return `<div class="weekcell" draggable="true"
+        ondragstart="calDragStart(event,'${d}')" ondragend="calDragEnd()"
+        ondragover="event.preventDefault()" ondrop="calDrop(event,'${d}')"
+        style="background:var(--panel2);cursor:grab;" onclick="calCellClick('${d}','editCalendarDay')">
+        <div style="font-size:10px;text-transform:uppercase;opacity:.75;">${dias[i]} ${d.slice(5)}</div>
+        <div style="font-size:10px;font-weight:600;margin-top:2px;">${day ? (PROFILE_LABELS[key]||key) : '—'}</div>
+        ${day ? `<div style="font-size:9px;color:var(--muted);margin-top:1px;">${day.label}</div>` : ''}
+      </div>`;
+    }).join('');
+    const openKey = 'calWeekOpen_' + monday;
+    const savedOpen = localStorage.getItem(openKey);
+    const isOpen = savedOpen===null ? true : savedOpen==='1';
+    return `<details class="csection" ${isOpen?'open':''} ontoggle="localStorage.setItem('${openKey}', this.open?'1':'0')" style="margin-bottom:10px;">
+      <summary>Semana de ${monday} a ${week[6]}</summary>
+      <div class="csectionBody weekgrid" style="padding-top:14px;">${cells}</div>
+    </details>`;
+  }).join('');
+}
 </script>
 </body>
 </html>
